@@ -1,0 +1,81 @@
+{
+  "name": "serverMmon",
+  "version": "1.0.0",
+  "ignore": [
+    ".gitignore"
+  ],
+  "bin": "./index.js",
+  "description": "青蛇探针",
+  "homepage": "https://github.com/souying/serverMmon",
+  "keywords": [
+    "ssh",
+    "webssh",
+    "terminal",
+    "webterminal",
+    "serverMmon",
+    "system information",
+    "sysinfo",
+    "monitor",
+    "monitoring",
+    "os",
+    "linux",
+    "osx",
+    "cpu",
+    "cpuload",
+    "memory",
+    "file system",
+    "fsstats",
+    "diskio",
+    "netstats",
+    "network",
+    "network connections",
+    "processes",
+    "users",
+    "internet",
+    "docker",
+    "battery",
+    "CLI"
+
+  ],
+  "license": "SEE LICENSE IN FILE - LICENSE",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/souying/serverMmon"
+  },
+  "engines": {
+    "node": ">= 14"
+  },
+  "bugs": {
+    "url": "https://github.com/souying/serverMmon/issues"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "ejs": "~2.6.1",
+    "cidr-matcher": "^2.1.1",
+    "express": "^4.18.1",
+    "express-ws": "^5.0.2",
+    "express-session": "^1.17.3",
+    "socket.io": "^4.5.1",
+    "ssh2": "^1.11.0",
+    "validator": "^13.7.0",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "nodemon": "^2.0.21",
+    "request": "^2.88.2"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "devStart": "nodemon index.js",
+    "build": "webpack --progress --config scripts/webpack.common.js --mode=production"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.5.1",
+    "terser-webpack-plugin": "^5.3.5",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
+    "xterm": "^4.0.0",
+    "xterm-addon-fit": "^0.5.0"
+  }
+}
