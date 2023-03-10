@@ -64,6 +64,13 @@ npm install -g pm2
 
 pm2 start index.js --name "serverMmon"  
 
+重新启动  
+
+pm2 restart serverMmon
+
+停止  
+
+pm2 stop serverMmon
 
 ```  
 以上需要node 环境  如宝塔安装 正常使用node项目安装方式即可  pm2 常用命令 请搜索
