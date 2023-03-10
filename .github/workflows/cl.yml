@@ -27,5 +27,4 @@ jobs:
 
       - run: yarn install
       - if: matrix['node-version'] == '16.x' && matrix['os'] == 'ubuntu-latest'
-        run: yarn
       - run: yarn run package
