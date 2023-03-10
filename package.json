@@ -68,7 +68,8 @@
   "scripts": {
     "start": "node index.js",
     "devStart": "nodemon index.js",
-    "build": "webpack --progress --config scripts/webpack.common.js --mode=production"
+    "build": "webpack --progress --config scripts/webpack.common.js --mode=production",
+    "package": "mkdir -p dist && pkg --targets node16-linux-x64,node16-macos-x64,node16-win-x64 --out-path dist ."
   },
   "devDependencies": {
     "socket.io-client": "^4.5.1",
@@ -76,6 +77,7 @@
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
     "xterm": "^4.0.0",
-    "xterm-addon-fit": "^0.5.0"
+    "xterm-addon-fit": "^0.5.0",
+    "pkg": "^5.8.0"
   }
 }
