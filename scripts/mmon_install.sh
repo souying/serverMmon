@@ -65,15 +65,15 @@ pre_check() {
     fi
     
     if [[ -z "${CN}" ]]; then
-        GITHUB_RAW_URL="xxxxxx"
+        GITHUB_RAW_URL="raw.githubusercontent.com/souying/serverMmon/main/"
         GITHUB_URL="github.com"
         Get_Docker_URL="get.docker.com"
         Get_Docker_Argu=" "
         Docker_IMG="xxxxx"
     else
-        GITHUB_RAW_URL="xxxxx"
-        GITHUB_URL="xxxx"
-        Get_Docker_URL="xxxx"
+        GITHUB_RAW_URL="cdn.jsdelivr.net/gh/souying/serverMmon@main/"
+        GITHUB_URL="dn-dao-github-mirror.daocloud.io"
+        Get_Docker_URL="get.daocloud.io/docker"
         Get_Docker_Argu="xxxxx"
         Docker_IMG="xxxxx"
     fi
@@ -142,8 +142,8 @@ install_mmon() {
     chmod 777 -R $MMON_MMON_PATH
     
     echo -e "正在下载监控端到${MMON_MMON_PATH}"
-    echo -e "https://cdn.365api.cn/mmon/${MMON_VERSION}/serverMmon-linux-${os_arch}.zip"
-    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip https://cdn.365api.cn/mmon/${MMON_VERSION}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
+    echo -e "${GITHUB_URL}/souying/serverMmon/releases/download/${MMON_VERSION}/serverMmon-linux-${os_arch}.zip"
+    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip ${GITHUB_URL}/souying/serverMmon/releases/download/${MMON_VERSION}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
     if [[ $? != 0 ]]; then
         echo -e "${red}Release 下载失败，请检查本机能否连接 ${GITHUB_URL}${plain}"
         return 0
@@ -210,7 +210,7 @@ EOF
     [ -f ${MMON_MMON_PATH}/config.json ] && echo -e "写入配置文件完成！！！"
     
     if [ "$os_other" != 1 ];then
-        wget -t 2 -T 10 --no-check-certificate -O $MMON_MMON_SERVICE https://cdn.365api.cn/mmon/mmon.service >/dev/null 2>&1
+        wget -t 2 -T 10 --no-check-certificate -O $MMON_MMON_SERVICE https://${GITHUB_RAW_URL}/scripts/mmon.service >/dev/null 2>&1
         if [[ $? != 0 ]]; then
             echo -e "${red}文件下载失败，请检查本机能否连接 ${GITHUB_RAW_URL}${plain}"
             return 0
