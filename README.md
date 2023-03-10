@@ -4,7 +4,8 @@
 * serverMmon中文版(青蛇探针)是nodeJs开发的一个酷炫高逼格的云探针、云监控、服务器云监控、多服务器探针~。
 * 在线演示：http://106.126.11.114:5880/       
 
-![Latest Version](http://dl.cpp.la/Archive/serverstatus_1.0.9.png)
+![Latest Version](https://cdn.365api.cn/mmon/home.png)
+![Latest Version ssh](https://cdn.365api.cn/mmon/ssh.png)
    
 # 主要文件介绍：
 
@@ -64,8 +65,13 @@ npm install -g pm2
 pm2 start index.js --name "serverMmon"  
 
 
-``` 
+```  
 以上需要node 环境  如宝塔安装 正常使用node项目安装方式即可  pm2 常用命令 请搜索
+
+ip+端口/  即可访问  
+
+ip+端口/ssh  即可访问在线SSH 
+
 
   
 
