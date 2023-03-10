@@ -2,8 +2,11 @@
 
 set -x  # 这里是为了看错误日志
 
+# 下载依赖
+npm install
+
 # 打包项目
-npm run build
+npm run package
 
 # 进入打包后的文件夹
 cd dist
