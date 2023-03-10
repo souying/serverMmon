@@ -19,14 +19,13 @@ on:
         required: true
         default: 'warning'
       latests:
-      	description: '镜像是否启用latest标签，非true不启用，默认启用'
+        description: '镜像是否启用latest标签，非true不启用，默认启用'
         required: true
         default: 'true'
       tags:
         description: 'tags：请填写镜像版本号，默认值1.0'
         required: true
         default: '1.0'
-
 
 jobs:
   buildx:
