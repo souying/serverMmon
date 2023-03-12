@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  mmon:
+    image: grbhq/mmon:latest
+    volumes:
+      - ./Mmon/config:/Mmon/config
+      - ./Mmon/home:/Mmon/home
+      - ./Mmon/server:/Mmon/server
+    ports:
+      - "5880:5880"
+    restart: always
