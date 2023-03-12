@@ -1,5 +1,4 @@
-# serverMmon中文版：   
-# 又名青蛇探针： 
+# serverMmon中文版(青蛇探针)：   
 
 * serverMmon中文版(青蛇探针)是nodeJs开发的一个酷炫高逼格的云探针、云监控、服务器云监控、多服务器探针~。
 * 在线演示：http://106.126.11.114:5880/       
@@ -56,6 +55,7 @@ npm install
 #### 四、修改上面主要说明文件（修改配置文件）              
 ```
   home/config.js  //修改服务端ip+端口 或者域名 如下
+  
   window.__PRE_CONFIG__ = {
      header: '青蛇🐍探针',
      subHeader: '[serverMmon] 中文名：青蛇🐍探针',
@@ -72,12 +72,28 @@ npm install
   
   {
       "id":1,  //序号数字类型
-      "name":"节点名",
+      "name":"节点名1",
       "url":"http://xx.xx.xx:5888",  //控制端url
       "location":"大陆",  //服务器位置
       "region":"CN",  //服务器国家简称 大写
       "token":"123456789"   // 与被控制端通信token 
-  }
+  },
+  {
+      "id":2,  //序号数字类型
+      "name":"节点名2",
+      "url":"http://xx.xx.xx:5888",  //控制端url
+      "location":"大陆",  //服务器位置
+      "region":"CN",  //服务器国家简称 大写
+      "token":"123456789"   // 与被控制端通信token 
+  },
+  {
+      "id":3,  //序号数字类型
+      "name":"节点名3",
+      "url":"http://xx.xx.xx:5888",  //控制端url
+      "location":"大陆",  //服务器位置
+      "region":"CN",  //服务器国家简称 大写
+      "token":"123456789"   // 与被控制端通信token 
+  },
   
 ```
 #### 三、启动测试              
@@ -110,6 +126,7 @@ pm2 stop serverMmon
 pm2 restart serverMmon
 
 ``` 
+
 以上需要node 环境  如宝塔安装 正常使用node项目安装方式即可  pm2 常用命令 请搜索
 
 ip+端口/  即可访问  
