@@ -189,7 +189,7 @@ install_mmon() {
     rm -rf serverMmon-linux-${os_arch}.zip
     
     #脚本加入环境变量
-    curl -o /usr/bin/MMON -Ls https://cdn.365api.cn/mmon/mmon_install.sh
+    curl -o /usr/bin/MMON -Ls https://${GITHUB_RAW_URL}/scripts/mmon_install.sh
     chmod +x /usr/bin/MMON
     [ -L /usr/bin/mmon ] && rm -rf /usr/bin/mmon
     ln -s /usr/bin/MMON /usr/bin/mmon
