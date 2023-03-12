@@ -95,6 +95,25 @@ confirm() {
     fi
 }
 
+update_script() {
+    echo -e "> 更新脚本"
+    
+    curl -sL https://${GITHUB_RAW_URL}/script/install.sh -o /tmp/mmon_install.sh
+    new_version=$(cat /tmp/mmon_install.sh | grep "MMON_VERSION" | head -n 1 | awk -F "=" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+    if [ ! -n "$new_version" ]; then
+        echo -e "脚本获取失败，请检查本机能否链接 https://${GITHUB_RAW_URL}/script/install.sh"
+        return 1
+    fi
+    echo -e "当前最新版本为: ${new_version}"
+    mv -f /tmp/mmon_install.sh ./mmon_install.sh && chmod a+x ./mmon_install.sh
+    
+    echo -e "3s后执行新脚本"
+    sleep 3s
+    clear
+    exec ./mmon_install.sh
+    exit 0
+}
+
 before_show_menu() {
     echo && echo -n -e "${yellow}* 按回车返回主菜单 *${plain}" && read temp
     show_menu
@@ -117,6 +136,22 @@ install_mmon() {
     install_base
     
     echo -e "> 安装监控Mmon"
+    echo -e "正在获取监控Mmon版本号"
+    
+    local version=$(curl -m 10 -sL "https://api.github.com/repos/souying/serverMmon/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+    if [ ! -n "$version" ]; then
+        version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/souying\/serverMmon@/v/g')
+    fi
+    if [ ! -n "$version" ]; then
+        version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/souying/serverMmon/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/souying\/serverMmon@/v/g')
+    fi
+    
+    if [ ! -n "$version" ]; then
+        echo -e "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/souying/serverMmon/releases/latest"
+        return 0
+    else
+        echo -e "当前最新版本为: ${version}"
+    fi
     
     # 监控文件夹
     if [ ! -d "${MMON_MMON_PATH}" ]; then
@@ -330,6 +365,20 @@ stop_agent() {
     fi
 }
 
+show_usage() {
+    echo "青蛇探针监控端 管理脚本使用方法: "
+    echo "--------------------------------------------------------"
+    echo "./mmon_install.sh install_mmon               - 安装监控mmon"
+    echo "./mmon_install.sh show_agent_log             - 查看Mmon日志"
+    echo "./mmon_install.sh modify_agent_config        - 修改Mmon配置"
+    echo "./mmon_install.sh status_agent               - 查看Mnon状态"
+    echo "./mmon_install.sh uninstall_agent            - 卸载Mmon"
+    echo "./mmon_install.sh restart_agent              - 重启Mmon"
+    echo "./mmon_install.sh stop_agent                 - 停止Mmon"
+    echo "./mmon_install.sh update_script              - 更新脚本"
+    echo "--------------------------------------------------------"
+}
+
 show_menu() {
     echo -e "
     ${green}serverMmon监控管理脚本${plain} ${red}${MMON_VERSION}${plain}
@@ -341,10 +390,11 @@ show_menu() {
     ${green}5.${plain} 卸载Mmon
     ${green}6.${plain} 重启Mmon
     ${green}7.${plain} 停止Mmon
+    ${green}8.${plain} 更新脚本
     ————————————————-
     ${green}0.${plain}  退出脚本
     "
-    echo && read -ep "请输入选择 [0-7]: " num
+    echo && read -ep "请输入选择 [0-8]: " num
     
     case "${num}" in
         0)
@@ -371,8 +421,11 @@ show_menu() {
         7)
             stop_agent
         ;;
+        8)
+            update_script
+        ;;
         *)
-            echo -e "${red}请输入正确的数字 [0-7]${plain}"
+            echo -e "${red}请输入正确的数字 [0-8]${plain}"
         ;;
     esac
 }
@@ -401,6 +454,9 @@ if [[ $# > 0 ]]; then
         ;;
         "stop_agent")
             stop_agent 0
+        ;;
+        "stop_agent")
+            update_script 0
         ;;
         *) show_usage ;;
     esac
