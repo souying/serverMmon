@@ -2,7 +2,7 @@
 
 #========================================================
 #   System Required: CentOS 7+ / Debian 8+ / Ubuntu 16+ / Alpine 3+ /
-#     Arch 如有问题带截图反馈 www.baidu.com
+#     Arch 如有问题带截图反馈 https://github.com/souying/serverMmon/issues
 #   Description: serverMmon监控安装脚本
 #   Github: https://github.com/souying/serverMmon
 #========================================================
