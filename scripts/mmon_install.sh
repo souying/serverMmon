@@ -98,10 +98,10 @@ confirm() {
 update_script() {
     echo -e "> 更新脚本"
     
-    curl -sL https://${GITHUB_RAW_URL}/script/install.sh -o /tmp/mmon_install.sh
+    curl -sL https://${GITHUB_RAW_URL}/scripts/install.sh -o /tmp/mmon_install.sh
     new_version=$(cat /tmp/mmon_install.sh | grep "MMON_VERSION" | head -n 1 | awk -F "=" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
     if [ ! -n "$new_version" ]; then
-        echo -e "脚本获取失败，请检查本机能否链接 https://${GITHUB_RAW_URL}/script/install.sh"
+        echo -e "脚本获取失败，请检查本机能否链接 https://${GITHUB_RAW_URL}/scripts/install.sh"
         return 1
     fi
     echo -e "当前最新版本为: ${new_version}"
