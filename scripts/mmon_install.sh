@@ -105,6 +105,14 @@ update_script() {
         return 1
     fi
     echo -e "当前最新版本为: ${new_version}"
+    
+    #脚本加入环境变量
+    curl -o /usr/bin/MMON -Ls https://${GITHUB_RAW_URL}/scripts/mmon_install.sh
+    chmod +x /usr/bin/MMON
+    [ -L /usr/bin/mmon ] && rm -rf /usr/bin/mmon
+    ln -s /usr/bin/MMON /usr/bin/mmon
+    chmod +x /usr/bin/mmon
+    
     mv -f /tmp/mmon_install.sh ./mmon_install.sh && chmod a+x ./mmon_install.sh
     
     echo -e "3s后执行新脚本"
