@@ -177,8 +177,8 @@ install_mmon() {
     chmod 777 -R $MMON_MMON_PATH
     
     echo -e "正在下载监控端到${MMON_MMON_PATH}"
-    echo -e "${GITHUB_URL}/souying/serverMmon/releases/download/${MMON_VERSION}/serverMmon-linux-${os_arch}.zip"
-    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip ${GITHUB_URL}/souying/serverMmon/releases/download/${MMON_VERSION}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
+    echo -e "${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip"
+    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip ${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
     if [[ $? != 0 ]]; then
         echo -e "${red}Release 下载失败，请检查本机能否连接 ${GITHUB_URL}${plain}"
         return 0
