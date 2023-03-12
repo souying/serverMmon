@@ -65,13 +65,13 @@ pre_check() {
     fi
     
     if [[ -z "${CN}" ]]; then
-        GITHUB_RAW_URL="raw.githubusercontent.com/souying/serverMmon/main/"
+        GITHUB_RAW_URL="raw.githubusercontent.com/souying/serverMmon/main"
         GITHUB_URL="github.com"
         Get_Docker_URL="get.docker.com"
         Get_Docker_Argu=" "
         Docker_IMG="xxxxx"
     else
-        GITHUB_RAW_URL="cdn.jsdelivr.net/gh/souying/serverMmon@main/"
+        GITHUB_RAW_URL="cdn.jsdelivr.net/gh/souying/serverMmon@main"
         GITHUB_URL="dn-dao-github-mirror.daocloud.io"
         Get_Docker_URL="get.daocloud.io/docker"
         Get_Docker_Argu="xxxxx"
