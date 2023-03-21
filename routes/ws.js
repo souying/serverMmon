@@ -1,7 +1,7 @@
 var ws = {}
 var request = require('request');
-// 获取配置文件
-var config = require('../config/config');
+// 获取配置
+const db = require('../common/data').serverList;
 let arrServer = []
 function createComprisonFunction(propertyName){
   return function(object1,object2){
@@ -19,7 +19,7 @@ function createComprisonFunction(propertyName){
 async function getServeOption(data) {
   return new Promise((resolve, reject) => {
       request({
-        url: data.url+"/serve",
+        url: 'http://'+data.url+"/serve",
         method: "POST",
         json: true,
         headers: {
@@ -29,14 +29,14 @@ async function getServeOption(data) {
         body: JSON.stringify(data)
       }, function(error, response, body) {
         if (!error && response.statusCode == 200) {
-            // console.log(body)
             if(body.code==200){
                 arrServer.push({
                   name:data.name,
                   location:data.location,
                   region:data.region,
                   getStatus:true,
-                  id:data.id,
+                  id:data._id,
+                  updata:data.updata,
                   data:body
                 })
             }else{
@@ -45,7 +45,8 @@ async function getServeOption(data) {
                   location:data.location,
                   region:data.region,
                   getStatus:false,
-                  id:data.id,
+                  id:data._id,
+                  updata:data.updata,
                   data:[]
                 })
             }
@@ -56,7 +57,8 @@ async function getServeOption(data) {
               location:data.location,
               region:data.region,
               getStatus:false,
-              id:data.id,
+              id:data._id,
+              updata:data.updata,
               data:[]
             })
         }
@@ -68,29 +70,31 @@ async function getServeOption(data) {
 
 let timer = undefined
 let newData;
-if(timer!=undefined){
-      clearInterval(timer)
-    timer = undefined
-  }
-  timer = setInterval(() => {
-      try {
-        arrServer = []
-        for(var promiseArr = [], i = 0; i < config.serverList.length; i++) {
-            promiseArr.push(getServeOption(config.serverList[i]))
-        }
+// if(timer!=undefined){
+//       clearInterval(timer)
+//     timer = undefined
+//   }
+//   timer = setInterval(async () => {
+//       try {
+//         arrServer = []
+//         let config = await db.find();
+//         console.log(config)
+//         for(var promiseArr = [], i = 0; i < config.length; i++) {
+//             promiseArr.push(getServeOption(config[i]))
+//         }
         
         
       
-        Promise.all(promiseArr)
-        .then(function () {
-            // console.log(arrServer);
-            let data = arrServer.sort(createComprisonFunction("id"));
-            newData = JSON.stringify({code:200,data:data,updated:new Date().getTime()});
-        })
-      } catch (error) {
-        console.log(error)
-      }
-  }, 2500)
+//         Promise.all(promiseArr)
+//         .then(function () {
+//             console.log(arrServer);
+//             let data = arrServer.sort(createComprisonFunction("updata"));
+//             newData = JSON.stringify({code:200,data:data,updated:new Date().getTime()});
+//         })
+//       } catch (error) {
+//         console.log(error)
+//       }
+//   }, 2500)
   
 var timer1 = undefined;
 ws.basic = function(ws,req){

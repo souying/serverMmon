@@ -1,7 +1,14 @@
 var createError = require('http-errors');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+
+//引入插件
+var vertoken=require('../common/token')
+var { expressjwt: jwt } = require("express-jwt");
+
 var indexRouter = require('../routes/index');
+var userRouter = require('../routes/user');
+var serverListRouter = require('../routes/serverlist');
 var indexws = require('../routes/ws');
 
 const config = require("./config");
@@ -10,6 +17,7 @@ const crypto = require("crypto");
 const nodeRoot = path.dirname(require.main.filename);
 const publicPath = path.join(nodeRoot, "client", "public");
 const publicPathHome = path.join(nodeRoot, "home");
+const publicPathAdmin = path.join(nodeRoot, "admin");
 console.log(path.join(nodeRoot, "home"))
 const express = require("express");
 
@@ -26,15 +34,17 @@ app.all('*', function (req, res, next) {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
 	res.header("Access-Control-Allow-Headers", "X-Requested-With");
-	res.header('Access-Control-Allow-Headers', ['mytoken','Content-Type']);
+	res.header('Access-Control-Allow-Headers', ['mytoken','Content-Type','authorization','Authorization']);
 	next();
 });
+
+
 
 
 const io = require("socket.io")(server, {
 	serveClient: false,
 	path: "/socket.io",
-	origins: ["localhost:5880"],
+	origins: ["localhost:"+config.listen.port],
 });
 const expressConfig = {
 	secret: crypto.randomBytes(20).toString("hex"),
@@ -74,6 +84,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(cookieParser());
 
+
 app.use('/server', indexRouter);
 app.ws('/basic', indexws.basic);
 
@@ -88,6 +99,8 @@ app.post("/ssh", express.static(publicPath, expressConfig));
 app.use("/ssh", express.static(publicPath, expressConfig));
 app.post("/login", express.static(publicPath, expressConfig));
 app.use("/login", express.static(publicPath, expressConfig));
+app.post("/admin", express.static(publicPathAdmin, expressConfig));
+app.use("/admin", express.static(publicPathAdmin, expressConfig));
 app.get("/host/:host?", connect);
 app.post("/submit", (req, res) => {
 	connect(req, res, req.body.host, req.body.username, req.body.userpassword);
@@ -101,8 +114,60 @@ app.get("/login", (req, res) => {
 app.get("/", (req, res) => {
 	res.sendFile(path.join(path.join(publicPathHome, "index.html")));
 });
+
+
+
+//验证token是否过期并规定那些路由不需要验证
+app.use(jwt({
+	secret:'aXloaWR1NzZidmgyaGpnaDEyNCEh',
+	algorithms:['HS256']
+  }).unless({
+  //用户第一次登录的时候不需要验证token
+	path:[
+		'/user/login',
+		'/user/reg',
+		'/server/list',
+		'/submit',
+		'/socket.io'
+	]  //不需要验证的接口名称
+  })
+  )
+  //解析token获取用户信息
+app.use(function(req, res, next) {
+	// console.log(req)
+	var token = req.headers['authorization'];
+	// console.log(req.headers['authorization'])
+	if(token == undefined){
+		return next();
+	}else{
+		vertoken.getToken(token).then((data)=> {
+// 			console.log(data)
+			req.data = data;
+			return next();
+		}).catch((error)=>{
+			return next();
+		})
+	}
+  });
+
+  //token失效返回信息
+app.use(function(err,req,res,next){
+	if(err.status==401){
+		 res.send(JSON.stringify({code:401,message:'token失效,退出登录'}))
+	}
+  })
+
+
+app.use('/user', userRouter);
+app.use('/serverlist', serverListRouter);
+
+
+
 app.use(notfound);
+
 app.use(handleErrors);
+
+
 // clean stop
 function stopApp(reason) {
 	shutdownMode = false;
@@ -120,6 +185,9 @@ io.on("connection", appSocket);
 io.use((socket, next) => {
 	socket.request.res ? session(socket.request, socket.request.res, next) : next(next); // eslint disable-line
 });
+
+
+
 
 function countdownTimer() {
 	if (!shutdownMode) clearInterval(shutdownInterval);

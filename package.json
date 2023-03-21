@@ -35,7 +35,6 @@
     "docker",
     "battery",
     "CLI"
-
   ],
   "license": "SEE LICENSE IN FILE - LICENSE",
   "private": false,
@@ -50,20 +49,23 @@
     "url": "https://github.com/souying/serverMmon/issues"
   },
   "dependencies": {
+    "cidr-matcher": "^2.1.1",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "ejs": "~2.6.1",
-    "cidr-matcher": "^2.1.1",
     "express": "^4.18.1",
-    "express-ws": "^5.0.2",
+    "express-jwt": "^8.4.1",
     "express-session": "^1.17.3",
+    "express-ws": "^5.0.2",
+    "http-errors": "~1.6.3",
+    "jsonwebtoken": "^9.0.0",
+    "morgan": "~1.9.1",
+    "nedb": "^1.8.0",
+    "nodemon": "^2.0.21",
+    "request": "^2.88.2",
     "socket.io": "^4.5.1",
     "ssh2": "^1.11.0",
-    "validator": "^13.7.0",
-    "http-errors": "~1.6.3",
-    "morgan": "~1.9.1",
-    "nodemon": "^2.0.21",
-    "request": "^2.88.2"
+    "validator": "^13.7.0"
   },
   "scripts": {
     "start": "node index.js",
@@ -72,12 +74,12 @@
     "package": "mkdir -p dist && pkg --targets node14-linux-x64,node14-win-x64 --out-path dist ."
   },
   "devDependencies": {
+    "pkg": "^5.8.0",
     "socket.io-client": "^4.5.1",
     "terser-webpack-plugin": "^5.3.5",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
     "xterm": "^4.0.0",
-    "xterm-addon-fit": "^0.5.0",
-    "pkg": "^5.8.0"
+    "xterm-addon-fit": "^0.5.0"
   }
 }

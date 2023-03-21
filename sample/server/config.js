@@ -13,7 +13,7 @@ const nodeRoot = path.dirname(require.main.filename);
 const configDefault = {
 	listen: {
 		ip: "0.0.0.0",
-		port: 5880,
+		port: 5999,
 	},
 	user: {
 		name: null,

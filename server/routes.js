@@ -147,11 +147,12 @@ exports.connect = function connect(req, res, _host = null, _user = null, _passwo
 	if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background);
 };
 
-exports.notfound = function notfound(_req, res) {
+exports.notfound = function notfound(_req, res,next) {
 	res.status(404).send("Sorry, can't find that!");
+	next()
 };
 
-exports.handleErrors = function handleErrors(err, _req, res) {
+exports.handleErrors = function handleErrors(err, _req, res,next) {
 	console.error(err.stack);
 	res.status(500).send("Something broke!");
 };
