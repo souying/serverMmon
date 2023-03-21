@@ -12,13 +12,13 @@ ENV MMON_DIR=/Mmon
 
 WORKDIR ${MMON_DIR}
 
-COPY --from=builder ${MMON_DIR}/node_modules ./node_modules
+COPY --from=builder /Mmon/node_modules ${MMON_DIR}/node_modules
 
 COPY . ${MMON_DIR}
 
 RUN npm install -g pm2
 
-EXPOSE 5880
+EXPOSE 5999
 
 #CMD pm2-runtime start index.js --name "serverMmon"
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]

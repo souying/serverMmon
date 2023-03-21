@@ -1,7 +1,7 @@
 <p align="center">
     <a href="https://github.com/souying/serverMmon/blob/main/LICENSE"><img src="https://img.shields.io/github/license/souying/serverMmon?color=green&logo=github&style=plastic" alt="license"></a>
     <a href="https://github.com/souying/serverMmon"><img src="https://img.shields.io/github/stars/souying/serverMmon.svg?logo=github&style=plastic" alt="GitHub stars"></a>
-    <a href="https://github.com/souying/serverMmon"><img src="https://img.shields.io/github/forks/souying/serverMmon.svg?logo=github&style=plastic" alt="GitHub forks"></a>
+    <a href="https://github.com/souying/serverMmon/forks"><img src="https://img.shields.io/github/forks/souying/serverMmon.svg?logo=github&style=plastic" alt="GitHub forks"></a>
     <a href="https://hub.docker.com/r/grbhq/mmon"><img src="https://img.shields.io/docker/pulls/grbhq/mmon?logo=docker&style=plastic" alt="Docker Pulls"></a>
     <a href="https://hub.docker.com/r/grbhq/mmon"><img src="https://img.shields.io/docker/image-size/grbhq/mmon?logo=docker&style=plastic" alt="Docker Size"></a>
     <a href="https://hub.docker.com/r/grbhq/mmon"><img src="https://img.shields.io/docker/stars/grbhq/mmon?logo=docker&style=plastic" alt="Docker Stars"></a>
@@ -31,17 +31,22 @@
 
 # 自动部署：
 
-【服务端】Docker一键命令[支持docker-compose部署]：
+【服务端】
+- Docker一键命令：
 
 ```
 docker run -dit \
-  -v $PWD/Mmon/config:/Mmon/config \
-  -v $PWD/Mmon/home:/Mmon/home \
-  -v $PWD/Mmon/server:/Mmon/server \
+  -v $PWD/Mmon/basedata:/Mmon/basedata \
   -p 5999:5999 \
   --restart=always \
   --name mmon \
 grbhq/mmon:latest
+```
+
+- docker-compose一键部署：
+
+```
+wget -O docker-compose.yaml https://raw.githubusercontent.com/souying/serverMmon/main/docker-compose.yaml && docker-compose up -d
 ```
 
 【监控端】：
