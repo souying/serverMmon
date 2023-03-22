@@ -22,7 +22,6 @@
 ![Latest Version ssh](https://cdn.365api.cn/mmon/ssh.png)
 ![Latest Version](https://cdn.365api.cn/mmon/11.png)
 ![Latest Version ssh](https://cdn.365api.cn/mmon/22.png)
-![Latest Version](https://cdn.365api.cn/mmon/33.png)
 
 # 主要文件介绍：
 
