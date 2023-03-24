@@ -46,7 +46,20 @@ grbhq/mmon:latest
 
 ```
 wget -O docker-compose.yaml https://raw.githubusercontent.com/souying/serverMmon/main/docker-compose.yaml && docker-compose up -d
+```  
+
+- 一键安装脚本(国内)：  
+
 ```
+bash <(curl -sL https://cdn.jsdelivr.net/gh/souying/serverMmon@main/scripts/mmon_install.sh)   
+
+```  
+- 一键安装脚本(国外)：  
+
+```
+bash <(curl -sL https://raw.githubusercontent.com/souying/serverMmon/main/scripts/mmon_install.sh)  
+
+```  
 
 【监控端】：
 
@@ -110,7 +123,7 @@ npm install
 npm start
 ```
 
-如果没错误提示，OK，ctrl+c关闭；如果有错误提示，检查5880端口是否被占用  
+如果没错误提示，OK，ctrl+c关闭；如果有错误提示，检查5999端口是否被占用  
 
 #### 四、安装pm2 维护进程
 

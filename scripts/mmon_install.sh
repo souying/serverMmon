@@ -636,7 +636,7 @@ show_menu() {
     ${green}7.${plain} 停止Mmon
     ${green}8.${plain} 更新脚本
     ————————————————-
-    ${green}9.${plain} 安装青蛇探针面板
+    ${green}9.${plain} 安装青蛇探针面板(serverMmon)
     ${green}10.${plain} 修改面板配置
     ${green}11.${plain} 重启并更新面板
     ${green}12.${plain} 启动面板
