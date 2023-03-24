@@ -8,7 +8,7 @@
 #========================================================
 
 MMON_BASE_PATH="/opt/serverMmon"
-MMON_DASHBOARD_PATH="${MMON_BASE_PATH}/serverMmon"
+MMON_DASHBOARD_PATH="${MMON_BASE_PATH}/dashboard"
 MMON_MMON_PATH="${MMON_BASE_PATH}/mmon"
 MMON_MMON_SERVICE="/etc/systemd/system/mmon.service"
 MMON_VERSION="v1.0.0"
@@ -69,13 +69,13 @@ pre_check() {
         GITHUB_URL="github.com"
         Get_Docker_URL="get.docker.com"
         Get_Docker_Argu=" "
-        Docker_IMG="xxxxx"
+        Docker_IMG="ghcr.io/souying/mmon"
     else
         GITHUB_RAW_URL="cdn.jsdelivr.net/gh/souying/serverMmon@main"
         GITHUB_URL="dn-dao-github-mirror.daocloud.io"
         Get_Docker_URL="get.daocloud.io/docker"
-        Get_Docker_Argu="xxxxx"
-        Docker_IMG="xxxxx"
+        Get_Docker_Argu=" -s docker --mirror Aliyun"
+        Docker_IMG="grbhq/mmon"
     fi
 }
 
@@ -203,8 +203,12 @@ install_mmon() {
     ln -s /usr/bin/MMON /usr/bin/mmon
     chmod +x /usr/bin/mmon
     
-    modify_agent_config 0
-    
+    if [ $# -ge 3 ]; then
+        modify_agent_config "$@"
+    else
+        modify_agent_config 0
+    fi
+
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
@@ -238,19 +242,25 @@ modify_agent_config() {
             input_agent_port
         fi
     }
-    input_agent_token
-    input_agent_port
+    
+    if [ $# -lt 2 ]; then
+        input_agent_token
+        input_agent_port
+    else
+        agent_token=$1
+        agent_port=$2
+    fi
     
     # 写入配置文件config.json
     echo -e "当前token：$agent_token \n当前port：$agent_port"
     echo -e "开始写入配置文件config.json到路径${MMON_MMON_PATH}"
-    [ ! -d ${MMON_MMON_PATH} ] && echo "${red}未安装监控端，退出修改！" || cat << EOF > ${MMON_MMON_PATH}/config.json
+    cat << EOF > ${MMON_MMON_PATH}/config.json
 {
     "token":${agent_token},
     "port":${agent_port}
 }
 EOF
-    [ -f ${MMON_MMON_PATH}/config.json ] && echo -e "写入配置文件完成！！！"
+    [ -s ${MMON_MMON_PATH}/config.json ] && echo -e "写入配置文件完成！！！"
     
     if [ "$os_other" != 1 ];then
         wget -t 2 -T 10 --no-check-certificate -O $MMON_MMON_SERVICE https://${GITHUB_RAW_URL}/scripts/mmon.service >/dev/null 2>&1
@@ -373,6 +383,212 @@ stop_agent() {
     fi
 }
 
+install_dashboard() {
+    install_base
+    
+    echo -e "> 安装面板"
+    
+    # 哪吒监控文件夹
+    if [ ! -d "${MMON_DASHBOARD_PATH}" ]; then
+        mkdir -p $MMON_DASHBOARD_PATH
+    else
+        echo "您可能已经安装过面板端，重复安装会覆盖数据，请注意备份。"
+        read -e -r -p "是否退出安装? [Y/n] " input
+        case $input in
+            [yY][eE][sS] | [yY])
+                echo "退出安装"
+                exit 0
+            ;;
+            [nN][oO] | [nN])
+                echo "继续安装"
+            ;;
+            *)
+                echo "退出安装"
+                exit 0
+            ;;
+        esac
+    fi
+    
+    chmod 777 -R $MMON_DASHBOARD_PATH
+    
+    command -v docker >/dev/null 2>&1
+    if [[ $? != 0 ]]; then
+        echo -e "正在安装 Docker"
+        bash <(curl -sL https://${Get_Docker_URL}) ${Get_Docker_Argu} >/dev/null 2>&1
+        if [[ $? != 0 ]]; then
+            echo -e "${red}安装失败，请检查本机能否连接 ${Get_Docker_URL}${plain}"
+            return 0
+        fi
+        systemctl enable docker.service
+        systemctl start docker.service
+        echo -e "${green}Docker${plain} 安装成功"
+    fi
+    
+    command -v docker-compose >/dev/null 2>&1
+    if [[ $? != 0 ]]; then
+        echo -e "正在安装 Docker-compose"
+        curl -L https://${GITHUB_URL}/docker/compose/releases/download/v2.16.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose >/dev/null 2>&1
+        if [[ $? != 0 ]]; then
+            echo -e "${red}安装失败，请检查本机能否连接 ${Get_Docker_URL}${plain}"
+            return 0
+        fi
+    fi
+    
+    modify_dashboard_config 0
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+modify_dashboard_config() {
+    echo -e "> 修改面板配置"
+    
+    echo -e "正在下载 Docker 脚本"
+    wget -t 2 -T 10 -O /tmp/mmon-docker-compose.yaml https://${GITHUB_RAW_URL}/docker-compose.yaml >/dev/null 2>&1
+    if [[ $? != 0 ]]; then
+        echo -e "${red}下载脚本失败，请检查本机能否连接 ${GITHUB_RAW_URL}${plain}"
+        return 0
+    fi
+    
+    echo "配置开始"
+    input_mmon_site_port() {
+        agent_port=""
+        read -ep "请输入站点访问端口: (回车默认端口5999, 端口范围：1000-60000), 退出请输入exit：" mmon_site_port
+        [ "$mmon_site_port" == "exit" ] && exit 0 ||
+        if [ "${mmon_site_port}" == "" ]; then
+            mmon_site_port="5999"
+        elif [ -z $(echo ${mmon_site_port} | egrep "^([1-9][0-9]{3}|[1-5][0-9]{4}|60000)$") ]; then
+            clear
+            echo -e "${red}端口输入非法！请重新输入！！！${plain}"
+            input_mmon_site_port
+        fi
+    }
+    input_mmon_site_port
+    
+    ## 替换端口
+    sed -i "/ports/{ n; s|\d.*\d:|$mmon_site_port:|; }" /tmp/mmon-docker-compose.yaml
+    ## 替换镜像源
+    sed -i "/image/{ s|: .*|: $Docker_IMG:latest|; }" /tmp/mmon-docker-compose.yaml
+    
+    #[ -d $MMON_DASHBOARD_PATH/basedata ] && mkdir -p $MMON_DASHBOARD_PATH/basedata
+    mv -f /tmp/mmon-docker-compose.yaml ${MMON_DASHBOARD_PATH}/docker-compose.yaml
+    
+    echo -e "面板配置 ${green}修改成功，请稍等重启生效${plain}"
+    
+    restart_and_update
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+restart_and_update() {
+    echo -e "> 重启并更新面板"
+    
+    cd $MMON_DASHBOARD_PATH
+    
+    docker compose version
+    if [[ $? == 0 ]]; then
+        docker compose pull
+        docker compose down
+        docker compose up -d
+    else
+        docker-compose pull
+        docker-compose down
+        docker-compose up -d
+    fi
+    
+    if [[ $? == 0 ]]; then
+        echo -e "${green}青蛇探针 重启成功${plain}"
+        echo -e "默认管理面板地址：${yellow}域名(ip):站点访问端口${plain}"
+        echo -e "默认管理面板登录地址：${yellow}域名(ip):站点访问端口${plain}/admin"
+    else
+        echo -e "${red}重启失败，可能是因为启动时间超过了两秒，请稍后查看日志信息${plain}"
+    fi
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+start_dashboard() {
+    echo -e "> 启动面板"
+    
+    docker compose version
+    if [[ $? == 0 ]]; then
+        cd $MMON_DASHBOARD_PATH && docker compose up -d
+    else
+        cd $MMON_DASHBOARD_PATH && docker-compose up -d
+    fi
+    
+    if [[ $? == 0 ]]; then
+        echo -e "${green}青蛇探针 启动成功${plain}"
+    else
+        echo -e "${red}启动失败，请稍后查看日志信息${plain}"
+    fi
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+stop_dashboard() {
+    echo -e "> 停止面板"
+    
+    docker compose version
+    if [[ $? == 0 ]]; then
+        cd $MMON_DASHBOARD_PATH && docker compose down
+    else
+        cd $MMON_DASHBOARD_PATH && docker-compose down
+    fi
+    
+    if [[ $? == 0 ]]; then
+        echo -e "${green}青蛇探针 停止成功${plain}"
+    else
+        echo -e "${red}停止失败，请稍后查看日志信息${plain}"
+    fi
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+show_dashboard_log() {
+    echo -e "> 获取面板日志"
+    
+    docker compose version
+    if [[ $? == 0 ]]; then
+        cd $MMON_DASHBOARD_PATH && docker compose logs -f
+    else
+        cd $MMON_DASHBOARD_PATH && docker-compose logs -f
+    fi
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+uninstall_dashboard() {
+    echo -e "> 卸载管理面板"
+    
+    docker compose version
+    if [[ $? == 0 ]]; then
+        cd $MMON_DASHBOARD_PATH && docker compose down
+    else
+        cd $MMON_DASHBOARD_PATH && docker-compose down
+    fi
+    
+    rm -rf $MMON_DASHBOARD_PATH
+    docker rmi -f ghcr.io/souying/mmon:latest > /dev/null 2>&1
+    docker rmi -f grbhq/mmon:latest > /dev/null 2>&1
+    clean_all
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
 show_usage() {
     echo "青蛇探针监控端 管理脚本使用方法: "
     echo "--------------------------------------------------------"
@@ -383,6 +599,16 @@ show_usage() {
     echo "./mmon_install.sh uninstall_agent            - 卸载Mmon"
     echo "./mmon_install.sh restart_agent              - 重启Mmon"
     echo "./mmon_install.sh stop_agent                 - 停止Mmon"
+    echo "--------------------------------------------------------"
+    echo "青蛇探针面板 管理脚本使用方法: "
+    echo "--------------------------------------------------------"
+    echo "./mmon_install.sh install_dashboard          - 安装青蛇探针面板"
+    echo "./mmon_install.sh modify_dashboard_config    - 修改面板配置"
+    echo "./mmon_install.sh restart_and_update         - 重启并更新面板"
+    echo "./mmon_install.sh start_dashboard            - 启动面板"
+    echo "./mmon_install.sh stop_dashboard             - 停止面板"
+    echo "./mmon_install.sh show_dashboard_log         - 获取面板日志"
+    echo "./mmon_install.sh show_dashboard_log         - 卸载管理面板"
     echo "./mmon_install.sh update_script              - 更新脚本"
     echo "--------------------------------------------------------"
 }
@@ -400,9 +626,17 @@ show_menu() {
     ${green}7.${plain} 停止Mmon
     ${green}8.${plain} 更新脚本
     ————————————————-
+    ${green}9.${plain}  安装青蛇探针面板
+    ${green}10.${plain} 修改面板配置
+    ${green}11.${plain} 重启并更新面板
+    ${green}12.${plain} 启动面板
+    ${green}13.${plain} 停止面板
+    ${green}14.${plain} 获取面板日志
+    ${green}15.${plain} 卸载管理面板
+    ————————————————-
     ${green}0.${plain}  退出脚本
     "
-    echo && read -ep "请输入选择 [0-8]: " num
+    echo && read -ep "请输入选择 [0-15]: " num
     
     case "${num}" in
         0)
@@ -432,8 +666,29 @@ show_menu() {
         8)
             update_script
         ;;
+        9)
+            install_dashboard
+        ;;
+        10)
+            modify_dashboard_config
+        ;;
+        11)
+            restart_and_update
+        ;;
+        12)
+            start_dashboard
+        ;;
+        13)
+            stop_dashboard
+        ;;
+        14)
+            show_dashboard_log
+        ;;
+        15)
+            uninstall_dashboard
+        ;;
         *)
-            echo -e "${red}请输入正确的数字 [0-8]${plain}"
+            echo -e "${red}请输入正确的数字 [0-15]${plain}"
         ;;
     esac
 }
@@ -463,8 +718,29 @@ if [[ $# > 0 ]]; then
         "stop_agent")
             stop_agent 0
         ;;
-        "stop_agent")
+        "update_script")
             update_script 0
+        ;;
+        "install_dashboard")
+            install_dashboard 0
+        ;;
+        "modify_dashboard_config")
+            modify_dashboard_config 0
+        ;;
+        "restart_and_update")
+            restart_and_update 0
+        ;;
+        "start_dashboard")
+            start_dashboard 0
+        ;;
+        "stop_dashboard")
+            stop_dashboard 0
+        ;;
+        "show_dashboard_log")
+            show_dashboard_log 0
+        ;;
+        "uninstall_dashboard")
+            uninstall_dashboard 0
         ;;
         *) show_usage ;;
     esac

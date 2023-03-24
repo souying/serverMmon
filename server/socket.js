@@ -4,8 +4,14 @@ const CIDRMatcher = require("cidr-matcher");
 const validator = require("validator");
 const dnsPromises = require("dns").promises;
 const util = require("util");
+const {spawn} = require('child_process');
 
+let zmodemszstart = Buffer.from('rz\r**\x18B00000000000000\r\x8a')
+let zmodemend = Buffer.from('**\x18B0800000000022d\r\x8a')
+let zmodemrzstart = Buffer.from('rz waiting to receive.**\x18B0100000023be50\r\x8a')
+let zmodemcancel = Buffer.from('\x18\x18\x18\x18\x18\x08\x08\x08\x08\x08')
 /**
+ * 
  * parse conn errors
  * @param {object} socket Socket object
  * @param {object} err    Error object
@@ -89,7 +95,7 @@ module.exports = function appSocket(socket) {
 				`ssh://${socket.request.session.username}@${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
 			);
 		});
-
+		let chan = {}; 
 		conn.on("ready", () => {
 			login = true;
 			socket.emit("status", "SSH 已连接成功");
@@ -108,10 +114,41 @@ module.exports = function appSocket(socket) {
 					stream.setWindow(data.rows, data.cols);
 				});
 				socket.on("data", (data) => {
+					if (data.includes(zmodemend)) {
+						const rz = spawn('rz', ['-E']);
+						rz.stdout.pipe(process.stdout);
+						rz.stderr.pipe(process.stderr);
+						rz.stdin.end();
+						rz.on('exit', (code) => {
+							console.log(`rz exited with code ${code}`);
+							socket.emit("data",Buffer.from(data)); 
+						});
+					}
+					if(data.includes(zmodemcancel)){
+						const filename = data.slice(3).trim();
+						const sz = spawn('sz', [filename]);
+						sz.stdout.pipe(socket);
+						sz.stderr.pipe(process.stderr);
+						sz.on('exit', (code) => {
+							console.log(`sz exited with code ${code}`);
+							socket.emit("data",zmodemend);
+						});
+					}
 					stream.write(data);
 				});
 				stream.on("data", (data) => {
-					socket.emit("data", data.toString("utf-8"));
+					
+
+					if (data.includes('rz')||data.includes("sz")) {
+						
+						chan.zmodem = true
+						socket.emit("data",Buffer.from(data)); 
+					}else{
+						socket.emit("data", data.toString("utf-8"));
+					}
+
+
+					
 				});
 				stream.on("close", (code, signal) => {
 					if (socket.request.session?.username && login === true) {

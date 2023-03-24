@@ -1,6 +1,7 @@
 var express = require('express');
 var request = require('request');
 var router = express.Router();
+const { Client } = require('ssh2');
 const db = require('../common/data').serverList;
 
 
@@ -105,6 +106,86 @@ router.post('/serverFindOne',async function(req, res) {
                 msg: '查询失败',
                 data:{}
             }))
+        }
+        
+    }else{
+        res.send(JSON.stringify({code:400,msg:"参数缺失",data:{}}))
+    }
+});
+
+router.post('/shell',async function(req, res) {
+    
+    if(req.body.cmd&&req.body.servershell){
+        let servershell = req.body.servershell
+        let data = await db.find();
+        let items = [];
+        for(let i = 0;i<data.length;i++){
+            for(let n = 0;n<servershell.length;n++){
+                if(data[i].url==servershell[n]){
+                    if(data[i].username&&data[i].password){
+                        items.push({
+                            host: (data[i].url).split(":")[0],
+                            port: 22,
+                             username: data[i].username, 
+                             password: data[i].password
+                        })
+                    }else{
+                        res.end(JSON.stringify({
+                            code: 400,
+                            msg: '要执行的服务器中必须设置服务器账号和密码（请查看）',
+                            data:{}
+                        }))
+                        return;
+                    }
+                    
+                }
+            }
+        }
+        console.log(items)
+        if(items.length>0){
+            let results = [];
+            for(let i = 0;i<items.length;i++){
+                let server = items[i]
+                let conn = new Client();
+                conn.on('ready', () => {
+                    conn.exec(req.body.cmd, (err, stream) => {
+                      if (err) {
+                        console.error(`Error executing command on ${server.host}: ${err.message}`);
+                        conn.end();
+                        return;
+                      }
+              
+                      let output = '';
+                      stream.on('data', data => {
+                        output += data.toString();
+                      });
+                      stream.on('close', code => {
+                        results.push({ server: server.host, output:output });
+                        conn.end();
+                        if (results.length === items.length) {
+                        //   res.json(results);
+                        //   console.log(results)
+                          res.end(JSON.stringify({
+                            code: 200,
+                            msg: '批量执行成功',
+                            data:results
+                          }))
+                        }
+                      });
+                    });
+                  });
+              
+                  conn.on('error', err => {
+                    console.error(`Error connecting to ${server.host}: ${err.message}`);
+                    res.end(JSON.stringify({
+                        code: 400,
+                        msg: `Error connecting to ${server.host}: ${err.message}`,
+                        data:{}
+                    }))
+                  });
+              
+                  conn.connect(server);
+            }
         }
         
     }else{

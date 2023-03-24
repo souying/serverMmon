@@ -523,6 +523,84 @@ $(function(){
         document.body.removeChild(transfer);
     })
 
+    function serverFindShell(){
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/serverlist/serverFind", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    // toastr.success(res.msg);
+                    // console.log(res.data)
+                    let html = '';
+                    for(let i = 0;i<res.data.length;i++){
+                        html+=`
+                        <option value="${res.data[i].url}">${res.data[i].name}</option>
+                        `
+                    }
+                    $("#servershell").html(html)
+                    $("#servershell").trigger("chosen:updated");
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+
+    if(url.indexOf("shell.html")!=-1){
+        serverFindShell()
+    }
+
+    $(document).on("click","#shell",function(){
+        let cmd = $("#cmd").val();
+        let servershell = $("#servershell").val();
+        if(cmd.length<=0){
+            toastr.error("执行命令不能为空");
+            return;
+        }
+        if(servershell.length<=0){
+            toastr.error("请选择执行命令的服务器");
+            return;
+        }
+
+        let param = {
+            "cmd":cmd,
+            "servershell":servershell
+        }
+        console.log(param)
+        toastr.success("提交成功请等待");
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/serverlist/shell", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.msg);
+                    console.log(res.data)
+                    let html = ""
+                    for(let i = 0;i<res.data.length;i++){
+                        html+=`
+                            <p>服务器ip为：${res.data[i].server} 输出结果为：${res.data[i].output} 运行时间${formatTime(new Date(), 'Y年M月D日 h:m:s')}</p>
+                        `
+                    }
+                    $("#servercmd").prepend(html)
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+        
+    })
     
 
 

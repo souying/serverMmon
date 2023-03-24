@@ -11,7 +11,7 @@ module.exports = {
 				terserOptions: {
 					ie8: false,
 					safari10: false,
-
+					mangle: false,
 					compress: {
 						unsafe: true,
 					},
@@ -27,7 +27,7 @@ module.exports = {
 		extensions: ["", ".webpack.js", ".web.js", ".js"],
 	},
 	entry: {
-		sshnake: "./client/src/index.js",
+		sshnake: "../client/src/index.js",
 	},
 	output: {
 		filename: "[name].bundle.js",
