@@ -185,8 +185,8 @@ install_mmon() {
     chmod 777 -R $MMON_MMON_PATH
     
     echo -e "正在下载监控端到${MMON_MMON_PATH}"
-    echo -e "${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip"
-    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip ${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
+    echo -e "https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip"
+    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
     if [[ $? != 0 ]]; then
         echo -e "${red}Release 下载失败，请检查本机能否连接 ${GITHUB_URL}${plain}"
         return 0
@@ -203,7 +203,7 @@ install_mmon() {
     ln -s /usr/bin/MMON /usr/bin/mmon
     chmod +x /usr/bin/mmon
     
-    if [ $# -ge 3 ]; then
+    if [ $# -ge 2 ]; then
         modify_agent_config "$@"
     else
         modify_agent_config 0
@@ -263,9 +263,10 @@ EOF
     [ -s ${MMON_MMON_PATH}/config.json ] && echo -e "写入配置文件完成！！！"
     
     if [ "$os_other" != 1 ];then
+        echo -e "${red}开始下载mmon.service服务文件...${plain}"
         wget -t 2 -T 10 --no-check-certificate -O $MMON_MMON_SERVICE https://${GITHUB_RAW_URL}/scripts/mmon.service >/dev/null 2>&1
         if [[ $? != 0 ]]; then
-            echo -e "${red}文件下载失败，请检查本机能否连接 ${GITHUB_RAW_URL}${plain}"
+            echo -e "${red}mmon.service服务文件下载失败，请检查本机能否连接 ${GITHUB_RAW_URL}${plain}"
             return 0
         fi
     fi
@@ -388,7 +389,7 @@ install_dashboard() {
     
     echo -e "> 安装面板"
     
-    # 哪吒监控文件夹
+    # 面板文件夹
     if [ ! -d "${MMON_DASHBOARD_PATH}" ]; then
         mkdir -p $MMON_DASHBOARD_PATH
     else
@@ -434,7 +435,11 @@ install_dashboard() {
         fi
     fi
     
-    modify_dashboard_config 0
+    if [ $# -ge 1 ]; then
+        modify_dashboard_config "$@"
+    else
+        modify_dashboard_config 0
+    fi
     
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -464,8 +469,13 @@ modify_dashboard_config() {
             input_mmon_site_port
         fi
     }
-    input_mmon_site_port
     
+    if [ $# -lt 1 ]; then
+        input_mmon_site_port
+    else
+        mmon_site_port=$1
+    fi
+
     ## 替换端口
     sed -i "/ports/{ n; s|\d.*\d:|$mmon_site_port:|; }" /tmp/mmon-docker-compose.yaml
     ## 替换镜像源
@@ -626,7 +636,7 @@ show_menu() {
     ${green}7.${plain} 停止Mmon
     ${green}8.${plain} 更新脚本
     ————————————————-
-    ${green}9.${plain}  安装青蛇探针面板
+    ${green}9.${plain} 安装青蛇探针面板
     ${green}10.${plain} 修改面板配置
     ${green}11.${plain} 重启并更新面板
     ${green}12.${plain} 启动面板
