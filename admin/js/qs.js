@@ -353,7 +353,7 @@ $(function(){
         })
     }
 
-    if(url.indexOf("index.html")!=-1){
+    if(url.indexOf("admin/index.html")!=-1){
         serverFindHome()
     }
     if(url.indexOf("serverlist.html")!=-1){
