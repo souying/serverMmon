@@ -1,3 +1,4 @@
+
 var api = "";
 var url = window.location.href;
 // 格式化日期，如月、日、时、分、秒保证为2位数
@@ -31,6 +32,8 @@ function trim(str) {
     }
     return trimStr
 }
+
+
 // 注册
 $(function(){
     toastr.options = {
@@ -196,6 +199,7 @@ $(function(){
         let location = $("#location").val();
         let region = $("#region").val();
         let token = $("#token").val();
+        let show = $("#show").val();
         let username = $("#username").val()?$("#username").val():null;
         let password = $("#password").val()?$("#password").val():null;
         if(!name){
@@ -218,6 +222,10 @@ $(function(){
             toastr.error("服务器通信token不能为空")
             return;
         }
+        if(!show){
+            toastr.error("显示控制选项不能为空")
+            return;
+        }
 
         let param = {
             "name":trim(name),
@@ -225,6 +233,7 @@ $(function(){
             "location":trim(location),
             "region":trim(region),
             "token":trim(token),
+            "show":trim(show),
             "username":trim(username),
             "password":trim(password)
         }
@@ -255,20 +264,57 @@ $(function(){
     })
 
     function serverFindHome(){
+        var geoCoordMap = {}
+        var geodata = {}
+        for (let key in diqu) {
+            // console.log(diqu[key])
+            geoCoordMap[key] = [diqu[key].longitude,diqu[key].latitude];
+            geodata[diqu[key].alpha2Code] = key
+        }
+
+        // console.log(geoCoordMap)
+        // console.log(geodata)
+        var mapName = 'world';
+
+        var chartData = [
+            
+        ];
+        
+        var convertData = function(data) {
+            var res = [];
+            for (var i = 0; i < data.length; i++) {
+                var geoCoord = geoCoordMap[data[i].name];
+                if (geoCoord) {
+                    res.push({
+                        name: data[i].name,
+                        value: geoCoord.concat(data[i].value),
+                    });
+                }
+            }
+            return res;
+        };
+        
+        var myChart = echarts.init(document.getElementById('chart'))
         $.ajax({
             headers: {
                 "authorization": 'Bearer ' + window.localStorage.getItem('token')
             },
             type: "POST",
-            url: api+"/serverlist/serverFind", //请求url
+            url: api+"/serverlist/serverFindAdmin", //请求url
             contentType: "application/x-www-form-urlencoded",
             success: (data) => {
                 let res = JSON.parse(data)
                 if (res.code === 200) {
                     // toastr.success(res.msg);
                     // console.log(res.data)
+                    // let chartData = []
                     let html = '';
                     for(let i = 0;i<res.data.length;i++){
+                        // console.log(geodata[res.data[i].region])
+                        chartData.push({
+                            name:geodata[res.data[i].region],
+                            value:100
+                        })
                         html+=`
                         <tr>
                             <td>${i+1}</td>
@@ -280,10 +326,136 @@ $(function(){
                             <td>${res.data[i].username?res.data[i].username:'无数据'}</td>
                             <td>${res.data[i].password?res.data[i].password:'无数据'}</td>
                             <td>${formatTime(res.data[i].updata, 'Y年M月D日 h:m:s')}</td>
-                            <td><a href="#"><i class="fa fa-check text-navy"></i></a></td>
+                            <td><a href="http://${res.data[i].url}" target="_blank"><i style="font-size:14px;" class="fa fa-home text-navy"></i></a></td>
                         </tr>
                         `
                     }
+                    // console.log(chartData)
+
+                    
+
+                    var option = {
+                        backgroundColor:"rgb(18,40,109)",
+                        tooltip: {
+                          show:false,
+                            padding: 0,
+                            enterable: true,
+                            transitionDuration: 1,
+                            textStyle: {
+                                color: '#000',
+                                decoration: 'none',
+                            },
+                            position: function (point, params, dom, rect, size) {
+                              return [point[0], point[1]];
+                            },
+                            formatter: function(params) {
+                                // console.log(params)
+                                
+                                return '';
+                            }
+                    
+                        },
+                    
+                        visualMap: {
+                            show: false,
+                            min: 0,
+                            max: 200,
+                            left: '10%',
+                            top: 'bottom',
+                            calculable: true,
+                            seriesIndex: [1],
+                            inRange: {
+                                color: ['#04387b', '#467bc0'] // 蓝绿
+                            }
+                        },
+                        geo: {
+                            show: true,
+                            map: mapName,
+                            zoom:1.3,
+                            label: {
+                                normal: {
+                                    show: false
+                                },
+                                emphasis: {
+                                    show: false,
+                                }
+                            },
+                            roam: false,
+                            itemStyle: {
+                                normal: {
+                                    areaColor: '#023677',
+                                    borderColor: '#1180c7',
+                                },
+                                emphasis: {
+                                    areaColor: '#4499d0',
+                                }
+                            }
+                        },
+                        series: [{
+                            name: '散点',
+                            type: 'scatter',
+                            coordinateSystem: 'geo',
+                            data: convertData(chartData),
+                            // symbolSize: function(val) {
+                            //     return val[2] / 10;
+                            // },
+                            symbolSize:10,
+                            label: {
+                                normal: {
+                                    formatter: '{b}',
+                                    position: 'right',
+                                    show: false
+                                },
+                                emphasis: {
+                                    show: true
+                                }
+                            },
+                            itemStyle: {
+                                normal: {
+                                    color: '#fff'
+                                }
+                            }
+                        },
+                            {
+                                name: '点',
+                                type: 'scatter',
+                                coordinateSystem: 'geo',
+                                zlevel: 6,
+                            },
+                            {
+                                name: '',
+                                type: 'effectScatter',
+                                coordinateSystem: 'geo',
+                                data: convertData(chartData.sort(function(a, b) {
+                                    return b.value - a.value;
+                                }).slice(0, 10)),
+                                symbolSize:15,
+                                showEffectOn: 'render',
+                                rippleEffect: {
+                                    brushType: 'stroke'
+                                },
+                                hoverAnimation: true,
+                                label: {
+                                    normal: {
+                                        formatter: '{b}',
+                                        position: 'left',
+                                        show: false
+                                    }
+                                },
+                                itemStyle: {
+                                    normal: {
+                                        color: 'yellow',
+                                        shadowBlur: 10,
+                                        shadowColor: 'yellow'
+                                    }
+                                },
+                                zlevel: 1
+                            },
+                    
+                        ]
+                    };
+                    // console.log(option)
+                    myChart.setOption(option,true);
                     $("#serverlist").html(html)
                 } else {
                     toastr.error(res.msg);
@@ -295,12 +467,13 @@ $(function(){
     var serverItem = {};
 
     function serverFindList(){
+
         $.ajax({
             headers: {
                 "authorization": 'Bearer ' + window.localStorage.getItem('token')
             },
             type: "POST",
-            url: api+"/serverlist/serverFind", //请求url
+            url: api+"/serverlist/serverFindAdmin", //请求url
             contentType: "application/x-www-form-urlencoded",
             success: (data) => {
                 let res = JSON.parse(data)
@@ -354,7 +527,8 @@ $(function(){
     }
 
     if(url.indexOf("admin/index.html")!=-1){
-        serverFindHome()
+        serverFindHome();
+
     }
     if(url.indexOf("serverlist.html")!=-1){
         serverFindList()
@@ -368,6 +542,7 @@ $(function(){
         $("#locationedit").val(serverItem[_id].location);
         $("#regionedit").val(serverItem[_id].region);
         $("#tokenedit").val(serverItem[_id].token);
+        $("#showedit").val(serverItem[_id].show?serverItem[_id].show:"false");
         $("#usernameedit").val(serverItem[_id].username);
         $("#passwordedit").val(serverItem[_id].password);
     }
@@ -384,6 +559,7 @@ $(function(){
         let location = $("#locationedit").val();
         let region = $("#regionedit").val();
         let token = $("#tokenedit").val();
+        let show = $("#showedit").val();
         let username = $("#usernameedit").val()?$("#usernameedit").val():null;
         let password = $("#passwordedit").val()?$("#passwordedit").val():null;
         if(!name){
@@ -406,6 +582,10 @@ $(function(){
             toastr.error("服务器通信token不能为空")
             return;
         }
+        if(!show){
+            toastr.error("显示隐藏控制不能为空")
+            return;
+        }
 
         let param = {
             "_id":trim(_id),
@@ -414,6 +594,7 @@ $(function(){
             "location":trim(location),
             "region":trim(region),
             "token":trim(token),
+            "show":trim(show),
             "username":trim(username),
             "password":trim(password)
         }
@@ -529,7 +710,7 @@ $(function(){
                 "authorization": 'Bearer ' + window.localStorage.getItem('token')
             },
             type: "POST",
-            url: api+"/serverlist/serverFind", //请求url
+            url: api+"/serverlist/serverFindAdmin", //请求url
             contentType: "application/x-www-form-urlencoded",
             success: (data) => {
                 let res = JSON.parse(data)
@@ -601,6 +782,129 @@ $(function(){
         })
         
     })
+
+    function shareList(){
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/share/shareFind", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    let html = ""
+                    for(let i = 0;i<res.data.length;i++){
+                        html+=`<span style="vertical-align: middle;">${i+1}</span><p style="display:inline;vertical-align: middle;margin:20px 15px;">服务器分享地址：${window.location.protocol}//${window.location.host}/?id=${res.data[i]._id}</p><span data-item="${res.data[i]._id}" class="btn btn-w-m btn-danger sharedel" style="vertical-align: middle;">删除</span><br><br>`
+                    }
+
+                    $("#serversharelist").html(html)
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+
+
+    $(document).on("click",".sharedel",function(){
+        let _id = $(this).attr("data-item");
+        let param = {
+            "_id":trim(_id)
+        }
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/share/shareRemove", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.msg);
+                    shareList()
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    })
+
+    $(document).on("click","#share",function(){
+        let servershare = $("#servershare").val();
+        if(servershare.length<=0){
+            toastr.error("请选择要分享的服务器");
+            return;
+        }
+
+        let param = {
+            "servershare":servershare
+        }
+        console.log(param)
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/share/shareAdd", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.msg);
+                    shareList()
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+        
+    })
+
+
+
+
+    function serverFindshare(){
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/serverlist/serverFindAdmin", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    // toastr.success(res.msg);
+                    // console.log(res.data)
+                    let html = '';
+                    for(let i = 0;i<res.data.length;i++){
+                        html+=`
+                        <option value="${res.data[i]._id}">${res.data[i].name}</option>
+                        `
+                    }
+                    $("#servershare").html(html)
+                    $("#servershare").trigger("chosen:updated");
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+
+
+    if(url.indexOf("share.html")!=-1){
+        serverFindshare()
+        shareList()
+    }
+
     
 
 

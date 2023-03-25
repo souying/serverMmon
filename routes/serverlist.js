@@ -13,6 +13,7 @@ router.post('/serverAdd', async function(req, res) {
             "location":req.body.location,
             "region":req.body.region,
             "token":req.body.token,
+            "show":req.body.show,
             "username":req.body.username?req.body.username:null,
             "password":req.body.password?req.body.password:null,
             "updata":Date.now()
@@ -35,6 +36,7 @@ router.post('/serverUpData',async function(req, res) {
             "location":req.body.location,
             "region":req.body.region,
             "token":req.body.token,
+            "show":req.body.show,
             "username":req.body.username?req.body.username:null,
             "password":req.body.password?req.body.password:null,
             "updata":Date.now()
@@ -73,6 +75,24 @@ router.post('/serverRemove',async function(req, res) {
     }
 });
 router.post('/serverFind',async function(req, res) {
+    
+    let data = await db.find({'show':'true'});
+    if(data){
+        res.end(JSON.stringify({
+            code: 200,
+            msg: '查询成功',
+            data:data
+            }))
+    }else{
+        res.end(JSON.stringify({
+            code: 400,
+            msg: '查询失败',
+            data:{}
+        }))
+    }
+});
+
+router.post('/serverFindAdmin',async function(req, res) {
     
     let data = await db.find();
     if(data){
