@@ -15,13 +15,27 @@
 
 # serverMmon中文版(青蛇探针)：
 
-* serverMmon中文版(青蛇探针)是nodeJs开发的一个酷炫高逼格的云探针、云监控、服务器云监控、多服务器探针~。
+* serverMmon(青蛇探针)是nodeJs开发的一个酷炫高逼格的云探针、云监控、服务器云监控、多服务器探针~。
 * 在线演示：http://106.126.11.114:5880/       
 
 ![Latest Version](https://cdn.365api.cn/mmon/home.png)
 ![Latest Version ssh](https://cdn.365api.cn/mmon/ssh.png)
 ![Latest Version](https://cdn.365api.cn/mmon/11.png)
-![Latest Version ssh](https://cdn.365api.cn/mmon/22.png)
+![Latest Version ssh](https://cdn.365api.cn/mmon/22.png)   
+
+# 主要功能介绍：
+* 全球服务器分布世界地图  
+* 服务器（控制端）ping 连通率功能   
+* 后台编辑 添加 删除 服务器（控制端） 
+* 生成服务器（控制端）一键安装脚本  
+* 在线SSH  
+* 多服务器批量执行命令  
+* 多服务器定制分享地址  
+* 控制游客那些服务器可显示  
+------------------------------------  
+# 下个版本更新功能：   
+* 更新预警通知    
+
 
 # 主要文件介绍：
 
