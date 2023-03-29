@@ -178,3 +178,7 @@ ip+端口/  即可访问
 ip+端口/admin  即可访问后台管理    ps 首次安装后需要注册管理账号  
 
 ip+端口/ssh  即可访问在线SSH 
+
+## 🌟 Star History  
+
+[![Star History Chart](https://api.star-history.com/svg?repos=souying/serverMmon&type=Date)](https://star-history.com/#souying/serverMmon&Date)  
