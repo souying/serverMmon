@@ -12,9 +12,10 @@
     <img src="https://moecount.glitch.me/get/@mmon?theme=rule34"/>
     </a>
 </div>
-## 感谢Star
 
-- 你的Star是我更新的动力，感谢~
+# 感谢Star  
+
+- 你的Star是我更新的动力，感谢~  
 
 # serverMmon(青蛇探针)：
 
