@@ -23,12 +23,12 @@ export PATH=$PATH:/usr/local/bin
 
 os_arch=""
 [ -e /etc/os-release ] && os_id=$(cat /etc/os-release | grep ^ID= | tr '[A-Z]' '[a-z]')
-echo -e "当前系统为：${os_id}"
+echo -e "当前系统ID为：${os_id#*=}"
 
 if [[ $os_id =~ "alpine" ]]; then
     os_name='alpine'
     os_other=1
-elif [[ $(uname -o | tr '[A-Z]' '[a-z]') = "linux" ]]; then
+elif [[ $(uname -s | tr '[A-Z]' '[a-z]') =~ "linux" ]]; then
     os_name='linux'
 fi
 
@@ -150,13 +150,13 @@ install_soft() {
 version_mmon() {
     echo -e "正在获取监控Mmon版本号"
     
-    m_version=$(curl -m 10 -skL "https://api.github.com/repos/souying/serverMmon/releases" | awk -F'"' '/tag_name/ {print $4}')
+    m_version=$(curl -m 10 -skL "https://api.github.com/repos/souying/serverMmon/releases" | awk -F'"' '/tag_name/ {print $4}' | sort -u)
     if [ ! -n "$m_version" ]; then
         #m_version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | sed -n 's/.*option value="[^@]*@\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/v\1/p')
-        m_version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | sed -nE 's/.*souying\/serverMmon@([0-9]+\.[0-9]+(\.[0-9]+)?).*/v\1/p'| sort -u) #-u去重, -r降序, 没有-r为升序
+        m_version=$(curl -m 10 -skL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | sed -nE 's/.*souying\/serverMmon@([0-9]+\.[0-9]+(\.[0-9]+)?).*/v\1/p'| sort -u) #-u去重, -r降序, 没有-r为升序
     fi
     if [ ! -n "$m_version" ]; then
-        m_version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/souying/serverMmon/" | sed -nE 's/.*souying\/serverMmon@([0-9]+\.[0-9]+(\.[0-9]+)?).*/v\1/p'| sort -u)
+        m_version=$(curl -m 10 -skL "https://gcore.jsdelivr.net/gh/souying/serverMmon/" | sed -nE 's/.*souying\/serverMmon@([0-9]+\.[0-9]+(\.[0-9]+)?).*/v\1/p'| sort -u)
     fi
     
     if [ ! -n "$m_version" ]; then
@@ -200,8 +200,10 @@ version_mmon() {
     
     if [ $# -lt 1 ]; then
         select_version
-    else
-        [[ " ${m_version_array[*]} " == *" $1 "* ]] && version=$1 && echo "您选择了版本号：${version}" || echo -e "${red}$1不存在的版本号，请输入存在的版本号！格式为v1.x.x${plain}" && exit 0
+    elif [[ " ${m_version_array[*]} " == *" $1 "* ]]; then
+        version=$1 && echo "您选择了版本号：${version}"
+    else    
+        echo -e "${red}$1不存在的版本号，请输入存在的版本号！格式为v1.x.x${plain}" && exit 0
     fi
 }
 
@@ -287,15 +289,16 @@ update_mmon() {
     [[ $? != 0 ]] && echo -e "${red}无法停止监控Mmon！退出执行${plain}" && exit 1
 
     #下载监控Mmon
-    rm -rf $MMON_MMON_PATH/*
+    rm -rf $MMON_MMON_PATH/mmon
     download_mmon
     
     #启动监控Mmon
     if [ "$os_other" != 1 ];then
         systemctl start mmon
     else
-        nohup ${MMON_MMON_PATH}/mmon >/dev/null 2>&1 &
+        cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
     fi
+    echo -e "${green}监控Mmon更新完成！${plain}"
     
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -364,7 +367,7 @@ EOF
         args=" $*"
         sed -i "/ExecStart/ s/$/${args}/" ${MMON_MMON_SERVICE}
     else
-        echo "@reboot nohup ${MMON_MMON_PATH}/mmon >/dev/null 2>&1 &" >> /etc/crontabs/root
+        echo "@reboot cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &" >> /etc/crontabs/root
        [[ ! $(pgrep "crond") ]] && crond
     fi
     echo -e "${green}MMON ${MMON_VERSION}${plain} 安装完成，已设置开机自启"
@@ -375,7 +378,7 @@ EOF
         systemctl enable mmon
         systemctl restart mmon
     else
-        nohup ${MMON_MMON_PATH}/mmon >/dev/null 2>&1 &
+        cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
     fi
     
     if [[ $# == 0 ]]; then
@@ -409,6 +412,7 @@ uninstall_agent() {
     
     [ -d $MMON_MMON_PATH ] && rm -rf $MMON_MMON_PATH
     clean_all
+    echo -e "${green}已成功卸载监控Mmon！${plain}"
     
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -424,7 +428,11 @@ clean_all() {
 }
 
 check_mmon() {
-    [ ! -d ${MMON_MMON_PATH} ] && echo -e "${red}未安装监控端，请先执行安装监控Mmon！！！${plain}\n" && exit 1       
+    [[ ! -d ${MMON_MMON_PATH} || $(ls -A ${MMON_MMON_PATH}) == "" ]] && echo -e "${red}未安装监控端，请先执行安装监控Mmon！！！${plain}\n" && exit 1       
+}
+
+check_dashboard() {
+    [[ ! -d ${MMON_DASHBOARD_PATH} || $(ls -A ${MMON_DASHBOARD_PATH}) == "" ]] && echo -e "${red}未安装探针面板，请先执行安装青蛇探针面板(serverMmon)！！！${plain}\n" && exit 1       
 }
 
 status_agent() {
@@ -445,8 +453,8 @@ restart_agent() {
     check_mmon
     echo -e "> 重启Mmon"
     if [ "$os_other" = 1 ]; then
-        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep ${MMON_PID_NAME})
-        nohup ${MMON_MMON_PATH}/mmon >/dev/null 2>&1 &
+        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep "mmon")
+        cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
        [ $(pgrep "mmon") ] && echo -e "${green}已重启Mmon${plain}" || echo -e "${red}Mmon启动出错！${plain}"
     else
         systemctl restart mmon.service
@@ -461,7 +469,7 @@ stop_agent() {
     check_mmon
     echo -e "> 停止Mmon"
     if [ "$os_other" = 1 ]; then
-        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep ${MMON_PID_NAME})
+        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep "mmon")
         [ $(pgrep "mmon") ] && echo -e "${red}未能停止Mmon，请手动处理！！！${plain}" && return 1 || echo -e "${green}已停止Mmon${plain}"
     else
         systemctl stop mmon.service
@@ -510,7 +518,7 @@ install_dashboard() {
         fi
         systemctl enable docker.service
         systemctl start docker.service
-        echo -e "${green}Docker${plain} 安装成功"
+        [[ $? != 0 ]] && echo -e "${red}Docker 服务启动失败！请手动处理！${plain}" && exit 1 || echo -e "${green}Docker${plain} 安装成功" 
     fi
     
     command -v docker-compose >/dev/null 2>&1
@@ -535,6 +543,7 @@ install_dashboard() {
 }
 
 modify_dashboard_config() {
+    check_dashboard
     echo -e "> 修改面板配置"
     
     echo -e "正在下载 Docker 脚本"
@@ -582,6 +591,7 @@ modify_dashboard_config() {
 }
 
 restart_and_update() {
+    check_dashboard
     echo -e "> 重启并更新面板"
     
     cd $MMON_DASHBOARD_PATH
@@ -611,6 +621,7 @@ restart_and_update() {
 }
 
 start_dashboard() {
+    check_dashboard
     echo -e "> 启动面板"
     
     docker compose version
@@ -632,6 +643,7 @@ start_dashboard() {
 }
 
 stop_dashboard() {
+    check_dashboard
     echo -e "> 停止面板"
     
     docker compose version
@@ -653,6 +665,7 @@ stop_dashboard() {
 }
 
 show_dashboard_log() {
+    check_dashboard
     echo -e "> 获取面板日志"
     
     docker compose version
@@ -668,6 +681,7 @@ show_dashboard_log() {
 }
 
 uninstall_dashboard() {
+    check_dashboard
     echo -e "> 卸载管理面板"
     
     docker compose version
