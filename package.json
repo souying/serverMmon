@@ -59,6 +59,7 @@
     "express-session": "^1.17.3",
     "express-ws": "^5.0.2",
     "http-errors": "~1.6.3",
+    "iconv-lite": "^0.6.3",
     "jsonwebtoken": "^9.0.0",
     "morgan": "~1.9.1",
     "nedb": "^1.8.0",

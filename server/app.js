@@ -9,6 +9,7 @@ var { expressjwt: jwt } = require("express-jwt");
 var indexRouter = require('../routes/index');
 var userRouter = require('../routes/user');
 var shareRouter = require('../routes/share');
+var tgRouter = require('../routes/tg');
 var serverListRouter = require('../routes/serverlist');
 var indexws = require('../routes/ws');
 
@@ -162,6 +163,7 @@ app.use(function(err,req,res,next){
 app.use('/user', userRouter);
 app.use('/serverlist', serverListRouter);
 app.use('/share', shareRouter);
+app.use('/tg', tgRouter);
 
 
 

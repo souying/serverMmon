@@ -3,7 +3,7 @@ var request = require('request');
 var router = express.Router();
 const { Client } = require('ssh2');
 const db = require('../common/data').serverList;
-
+const { ping } = require("../common/ping");
 
 router.post('/serverAdd', async function(req, res) {
     if(req.body.name&&req.body.url&&req.body.location&&req.body.region&&req.body.token){
@@ -206,6 +206,40 @@ router.post('/shell',async function(req, res) {
               
                   conn.connect(server);
             }
+        }
+        
+    }else{
+        res.send(JSON.stringify({code:400,msg:"参数缺失",data:{}}))
+    }
+});
+
+router.post('/ping',async function(req, res) {
+    
+    if(req.body._id){
+        let data = await db.findOne({'_id':req.body._id});
+        if(data.url){
+            
+            ping((data.url).split(":")[0],function(arr){
+                let html = ""
+                
+                for (let i = 0; i < arr.length; i++) {
+                    html+=arr[i]+'<br>'
+                    
+                }
+                res.end(JSON.stringify({
+                    code: 200,
+                    msg: 'ping成功',
+                    data:html
+                  }))
+                
+            })
+            
+        }else{
+            res.end(JSON.stringify({
+                code: 400,
+                msg: 'ping失败',
+                data:{}
+            }))
         }
         
     }else{

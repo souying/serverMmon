@@ -1,4 +1,5 @@
 
+
 var api = "";
 var url = window.location.href;
 // 格式化日期，如月、日、时、分、秒保证为2位数
@@ -326,7 +327,10 @@ $(function(){
                             <td>${res.data[i].username?res.data[i].username:'无数据'}</td>
                             <td>${res.data[i].password?res.data[i].password:'无数据'}</td>
                             <td>${formatTime(res.data[i].updata, 'Y年M月D日 h:m:s')}</td>
-                            <td><a href="http://${res.data[i].url}" target="_blank"><i style="font-size:14px;" class="fa fa-home text-navy"></i></a></td>
+                            <td>
+                                <a href="http://${res.data[i].url}" target="_blank"><i style="font-size:14px;" class="fa fa-home text-navy"></i></a>
+                                <a href="javascript:;" style="margin-left:15px;" data-item="${res.data[i]._id}" class="ping">PING</a>
+                            </td>
                         </tr>
                         `
                     }
@@ -704,6 +708,58 @@ $(function(){
         document.body.removeChild(transfer);
     })
 
+    $(document).on("click",".ping",function(){
+        toastr.success("请等待")
+        let _self = $(this);
+        let _id = _self.attr("data-item");
+        let param = {
+            "_id":trim(_id)
+        }
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/serverlist/ping", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                toastr.options = {
+
+                    "closeButton": false, //是否显示关闭按钮
+                    
+                    "debug": false, //是否使用debug模式
+                    
+                    "positionClass": "toast-top-full-width",//弹出窗的位置
+                    
+                    "showDuration": "300",//显示的动画时间
+                    
+                    "hideDuration": "1000",//消失的动画时间
+                    
+                    "timeOut": "8000", //展现时间
+                    
+                    "extendedTimeOut": "1000",//加长展示时间
+                    
+                    "showEasing": "swing",//显示时的动画缓冲方式
+                    
+                    "hideEasing": "linear",//消失时的动画缓冲方式
+                    
+                    "showMethod": "fadeIn",//显示时的动画方式
+                    
+                    "hideMethod": "fadeOut" //消失时的动画方式
+                    
+                };
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.data)
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    })
+
     function serverFindShell(){
         $.ajax({
             headers: {
@@ -904,6 +960,159 @@ $(function(){
         serverFindshare()
         shareList()
     }
+
+
+    // tg
+
+    function tglist(){
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/tg/tgFindOne", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    // console.log(res)
+                    if(res.data.length!=0){
+                        $("#token").val(res.data[0].token);
+                        $("#chatId").val(res.data[0].chatId)
+                        $("#number").val(Number(res.data[0].number))
+                        $("#tgshow").val(res.data[0].tgshow)
+                        $("#tgid").val(res.data[0]._id)
+                        $("#tgbtn").text("更新")
+                    }
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+    
+    if(url.indexOf("tg.html")!=-1){
+        tglist()
+    }
+
+    function tgsave(){
+        let token = $("#token").val();
+        let chatId = $("#chatId").val();
+        let number = $("#number").val();
+        let tgshow = $("#tgshow").val();
+        if(!token){
+            toastr.error("token不能为空")
+            return;
+        }
+        if(!chatId){
+            toastr.error("chatId不能为空")
+            return;
+        }
+        if(!number){
+            toastr.error("重试次数不能为空")
+            return;
+        }
+        if(!tgshow){
+            toastr.error("推送状态不能为空")
+            return;
+        }
+
+
+        let param = {
+            "token":trim(token),
+            "chatId":trim(chatId),
+            "number":trim(number),
+            "tgshow":trim(tgshow),
+        }
+        console.log(param)
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/tg/add", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.msg);
+                    setTimeout(function(){
+                        location.reload() 
+                    },1000)
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+
+    function tgupdata(){
+        let _id = $("#tgid").val();
+        let token = $("#token").val();
+        let chatId = $("#chatId").val();
+        let number = $("#number").val();
+        let tgshow = $("#tgshow").val();
+        if(!token){
+            toastr.error("token不能为空")
+            return;
+        }
+        if(!chatId){
+            toastr.error("chatId不能为空")
+            return;
+        }
+        if(!number){
+            toastr.error("重试次数不能为空")
+            return;
+        }
+        if(!tgshow){
+            toastr.error("推送状态不能为空")
+            return;
+        }
+        
+
+        let param = {
+            "_id":trim(_id),
+            "token":trim(token),
+            "chatId":trim(chatId),
+            "number":trim(number),
+            "tgshow":trim(tgshow),
+        }
+        console.log(param)
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/tg/updata", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.msg);
+                    setTimeout(function(){
+                        location.reload() 
+                    },1000)
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+
+    $(document).on("click","#tgbtn",function(){
+        if($("#tgid").val()){
+            tgupdata()
+        }else{
+            tgsave()
+        }
+    })
+
+
 
     
 

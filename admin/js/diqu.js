@@ -934,6 +934,11 @@ var diqu = {
       "latitude": 23.69781,
       "longitude": 120.960515
     },
+    "香港": {
+      "alpha2Code": "HK",
+      "latitude": 22.320048,
+      "longitude": 114.173355
+    },
     "塔吉克斯坦": {
       "alpha2Code": "TJ",
       "latitude": 38.861034,

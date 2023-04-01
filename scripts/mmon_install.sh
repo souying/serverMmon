@@ -11,7 +11,7 @@ MMON_BASE_PATH="/opt/serverMmon"
 MMON_DASHBOARD_PATH="${MMON_BASE_PATH}/dashboard"
 MMON_MMON_PATH="${MMON_BASE_PATH}/mmon"
 MMON_MMON_SERVICE="/etc/systemd/system/mmon.service"
-MMON_VERSION="v1.0.0"
+MMON_VERSION="v1.0.1"
 
 cur_dir=$(pwd)
 
@@ -23,8 +23,13 @@ export PATH=$PATH:/usr/local/bin
 
 os_arch=""
 [ -e /etc/os-release ] && os_id=$(cat /etc/os-release | grep ^ID= | tr '[A-Z]' '[a-z]')
-if [[ $os_id =~ "alpine" ]] || [[ $os_id =~ "openwrt" ]]; then
-    os_other='1'
+echo -e "当前系统为：${os_id}"
+
+if [[ $os_id =~ "alpine" ]]; then
+    os_name='alpine'
+    os_other=1
+elif [[ $(uname -o | tr '[A-Z]' '[a-z]') = "linux" ]]; then
+    os_name='linux'
 fi
 
 pre_check() {
@@ -41,6 +46,8 @@ pre_check() {
         elif [[ $(uname -m | grep 'arm') != "" ]]; then
         os_arch="arm64"
     fi
+    ## os_alpine
+    
     
     ## China_IP
     if [[ -z "${CN}" ]]; then
@@ -140,25 +147,86 @@ install_soft() {
     (command -v apk >/dev/null 2>&1 && apk update && apk add $* -f)
 }
 
-install_mmon() {
-    install_base
-    
-    echo -e "> 安装监控Mmon"
+version_mmon() {
     echo -e "正在获取监控Mmon版本号"
     
-    local version=$(curl -m 10 -sL "https://api.github.com/repos/souying/serverMmon/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-    if [ ! -n "$version" ]; then
-        version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/souying\/serverMmon@/v/g')
+    m_version=$(curl -m 10 -skL "https://api.github.com/repos/souying/serverMmon/releases" | awk -F'"' '/tag_name/ {print $4}')
+    if [ ! -n "$m_version" ]; then
+        #m_version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | sed -n 's/.*option value="[^@]*@\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/v\1/p')
+        m_version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/souying/serverMmon/" | sed -nE 's/.*souying\/serverMmon@([0-9]+\.[0-9]+(\.[0-9]+)?).*/v\1/p'| sort -u) #-u去重, -r降序, 没有-r为升序
     fi
-    if [ ! -n "$version" ]; then
-        version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/souying/serverMmon/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/souying\/serverMmon@/v/g')
+    if [ ! -n "$m_version" ]; then
+        m_version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/souying/serverMmon/" | sed -nE 's/.*souying\/serverMmon@([0-9]+\.[0-9]+(\.[0-9]+)?).*/v\1/p'| sort -u)
     fi
     
-    if [ ! -n "$version" ]; then
+    if [ ! -n "$m_version" ]; then
         echo -e "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/souying/serverMmon/releases/latest"
         return 0
+    fi
+    m_version_array=($m_version)
+
+    select_version() {
+        echo -e "最新可用版本号："
+        for i in $(seq 0 $((${#m_version_array[@]}-1))); do
+            #最新的10个版本号
+            if [[ "$i" -lt $((${#m_version_array[@]}-10)) ]]; then
+                continue
+            fi
+            echo -e "${green}$((i+1)))  ${m_version_array[$i]}${plain}"
+        done
+        
+        while true; do
+        read -p "请选择版本序列号或直接输入存在的版本号[输入exit退出]（直接回车选择最新版本）：" input_version
+            if [[ "$input_version" == "exit" ]]; then
+                exit 0
+            elif [[ -z "$input_version" ]]; then
+                # 回车最新版
+                version="${m_version_array[-1]}"
+                break
+            elif [[ "$input_version" =~ ^[0-9]+$ && "$input_version" -ge 1 && "$input_version" -le "${#m_version_array[@]}" ]]; then
+                # 选择版本序列号
+                version="${m_version_array[$((input_version-1))]}"
+                break
+            elif [[ " ${m_version_array[*]} " == *" $input_version "* ]]; then
+                # 输入存在的版本号
+                version="$input_version"
+                break
+            else
+                echo -e "${yellow}错误：无效的选项，请重新选择!${plain}"
+            fi
+        done
+        echo "您选择了版本号：${version}"
+    }
+    
+    if [ $# -lt 1 ]; then
+        select_version
     else
-        echo -e "当前最新版本为: ${version}"
+        [[ " ${m_version_array[*]} " == *" $1 "* ]] && version=$1 && echo "您选择了版本号：${version}" || echo -e "${red}$1不存在的版本号，请输入存在的版本号！格式为v1.x.x${plain}" && exit 0
+    fi
+}
+
+download_mmon() {
+    echo -e "正在下载监控端到${MMON_MMON_PATH}"
+    echo -e "https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-${os_name}-${os_arch}.zip"
+    wget -t 2 -T 10 --no-check-certificate -O serverMmon-${os_name}-${os_arch}.zip https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-${os_name}-${os_arch}.zip >/dev/null 2>&1
+    if [[ $? != 0 ]]; then
+        echo -e "${red}Release 下载失败，请检查本机能否连接 ${GITHUB_URL}${plain}"
+        return 0
+    fi
+    
+    unzip -qo serverMmon-${os_name}-${os_arch}.zip -d $MMON_MMON_PATH &&
+    [[ ! -f $MMON_MMON_PATH/mmon ]] && mv $MMON_MMON_PATH/serverMmon-${os_name}-${os_arch} $MMON_MMON_PATH/mmon
+    rm -rf serverMmon-${os_name}-${os_arch}.zip
+}
+
+install_mmon() {
+    install_base
+    echo -e "> 安装监控Mmon"
+    # 选择监控Mmon版本
+    if [ $# -ge 3 ]; then
+        version_mmon "$3"
+    else
+        version_mmon
     fi
     
     # 监控文件夹
@@ -183,18 +251,8 @@ install_mmon() {
         esac
     fi
     chmod 777 -R $MMON_MMON_PATH
-    
-    echo -e "正在下载监控端到${MMON_MMON_PATH}"
-    echo -e "https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip"
-    wget -t 2 -T 10 --no-check-certificate -O serverMmon-linux-${os_arch}.zip https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-linux-${os_arch}.zip >/dev/null 2>&1
-    if [[ $? != 0 ]]; then
-        echo -e "${red}Release 下载失败，请检查本机能否连接 ${GITHUB_URL}${plain}"
-        return 0
-    fi
-    
-    unzip -qo serverMmon-linux-${os_arch}.zip -d $MMON_MMON_PATH &&
-    [[ ! -f $MMON_MMON_PATH/mmon ]] && mv $MMON_MMON_PATH/serverMmon-linux-${os_arch} $MMON_MMON_PATH/mmon
-    rm -rf serverMmon-linux-${os_arch}.zip
+    #下载监控Mmon
+    download_mmon
     
     #脚本加入环境变量
     curl -o /usr/bin/MMON -Ls https://${GITHUB_RAW_URL}/scripts/mmon_install.sh
@@ -203,12 +261,42 @@ install_mmon() {
     ln -s /usr/bin/MMON /usr/bin/mmon
     chmod +x /usr/bin/mmon
     
-    if [ $# -ge 2 ]; then
+    if [[ $# -ge 2 ]]; then
         modify_agent_config "$@"
     else
         modify_agent_config 0
     fi
 
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
+update_mmon() {
+    check_mmon
+    echo -e "> 更新监控Mmon"
+    #选择监控Mmon版本
+    if [[ $# -ge 1 && "$1" != "0" ]]; then
+        version_mmon "$@"
+    else
+        version_mmon
+    fi
+    
+    #停止监控Mmon
+    stop_agent 0
+    [[ $? != 0 ]] && echo -e "${red}无法停止监控Mmon！退出执行${plain}" && exit 1
+
+    #下载监控Mmon
+    rm -rf $MMON_MMON_PATH/*
+    download_mmon
+    
+    #启动监控Mmon
+    if [ "$os_other" != 1 ];then
+        systemctl start mmon
+    else
+        nohup ${MMON_MMON_PATH}/mmon >/dev/null 2>&1 &
+    fi
+    
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
@@ -374,7 +462,7 @@ stop_agent() {
     echo -e "> 停止Mmon"
     if [ "$os_other" = 1 ]; then
         [ $(pgrep "mmon") ] && kill -s 9 $(pgrep ${MMON_PID_NAME})
-        [ $(pgrep "mmon") ] && echo -e "${red}未能停止Mmon，请手动处理！！！${plain}" || echo -e "${green}已停止Mmon${plain}"
+        [ $(pgrep "mmon") ] && echo -e "${red}未能停止Mmon，请手动处理！！！${plain}" && return 1 || echo -e "${green}已停止Mmon${plain}"
     else
         systemctl stop mmon.service
     fi
@@ -435,7 +523,7 @@ install_dashboard() {
         fi
     fi
     
-    if [ $# -ge 1 ]; then
+    if [[ $# -ge 1 && "$1" != "0" ]]; then
         modify_dashboard_config "$@"
     else
         modify_dashboard_config 0
@@ -470,7 +558,7 @@ modify_dashboard_config() {
         fi
     }
     
-    if [ $# -lt 1 ]; then
+    if [[ $# -lt 1 || "$1" == "0" ]]; then
         input_mmon_site_port
     else
         mmon_site_port=$1
@@ -603,6 +691,7 @@ show_usage() {
     echo "青蛇探针监控端 管理脚本使用方法: "
     echo "--------------------------------------------------------"
     echo "./mmon_install.sh install_mmon               - 安装监控mmon"
+    echo "./mmon_install.sh update_mmon                - 更新监控mmon"
     echo "./mmon_install.sh show_agent_log             - 查看Mmon日志"
     echo "./mmon_install.sh modify_agent_config        - 修改Mmon配置"
     echo "./mmon_install.sh status_agent               - 查看Mnon状态"
@@ -618,7 +707,7 @@ show_usage() {
     echo "./mmon_install.sh start_dashboard            - 启动面板"
     echo "./mmon_install.sh stop_dashboard             - 停止面板"
     echo "./mmon_install.sh show_dashboard_log         - 获取面板日志"
-    echo "./mmon_install.sh show_dashboard_log         - 卸载管理面板"
+    echo "./mmon_install.sh uninstall_dashboard         - 卸载管理面板"
     echo "./mmon_install.sh update_script              - 更新脚本"
     echo "--------------------------------------------------------"
 }
@@ -627,16 +716,16 @@ show_menu() {
     echo -e "
     ${green}serverMmon监控管理脚本${plain} ${red}${MMON_VERSION}${plain}
     --- https://github.com/souying/serverMmon ---
-    ${green}1.${plain} 安装监控Mmon
-    ${green}2.${plain} 查看Mmon日志
-    ${green}3.${plain} 修改Mmon配置
-    ${green}4.${plain} 查看Mnon状态
-    ${green}5.${plain} 卸载Mmon
-    ${green}6.${plain} 重启Mmon
-    ${green}7.${plain} 停止Mmon
-    ${green}8.${plain} 更新脚本
+    ${green}1.${plain}  安装监控Mmon
+    ${green}2.${plain}  更新监控Mmon
+    ${green}3.${plain}  查看Mmon日志
+    ${green}4.${plain}  修改Mmon配置
+    ${green}5.${plain}  查看Mnon状态
+    ${green}6.${plain}  卸载Mmon
+    ${green}7.${plain}  重启Mmon
+    ${green}8.${plain}  停止Mmon
     ————————————————-
-    ${green}9.${plain} 安装青蛇探针面板(serverMmon)
+    ${green}9.${plain}  安装青蛇探针面板(serverMmon)
     ${green}10.${plain} 修改面板配置
     ${green}11.${plain} 重启并更新面板
     ${green}12.${plain} 启动面板
@@ -644,9 +733,11 @@ show_menu() {
     ${green}14.${plain} 获取面板日志
     ${green}15.${plain} 卸载管理面板
     ————————————————-
+    ${green}16.${plain} 更新脚本
+    ————————————————-
     ${green}0.${plain}  退出脚本
     "
-    echo && read -ep "请输入选择 [0-15]: " num
+    echo && read -ep "请输入选择 [0-16]: " num
     
     case "${num}" in
         0)
@@ -656,25 +747,25 @@ show_menu() {
             install_mmon
         ;;
         2)
-            show_agent_log
+            update_mmon
         ;;
         3)
-            modify_agent_config
+            show_agent_log
         ;;
         4)
-            status_agent
+            modify_agent_config
         ;;
         5)
-            uninstall_agent
+            status_agent
         ;;
         6)
-            restart_agent
+            uninstall_agent
         ;;
         7)
-            stop_agent
+            restart_agent
         ;;
         8)
-            update_script
+            stop_agent
         ;;
         9)
             install_dashboard
@@ -697,8 +788,11 @@ show_menu() {
         15)
             uninstall_dashboard
         ;;
+        16)
+            update_script
+        ;;
         *)
-            echo -e "${red}请输入正确的数字 [0-15]${plain}"
+            echo -e "${red}请输入正确的数字 [0-16]${plain}"
         ;;
     esac
 }
@@ -708,7 +802,20 @@ pre_check
 if [[ $# > 0 ]]; then
     case $1 in
         "install_mmon")
-            install_mmon 0
+            shift
+            if [ $# -ge 2 ]; then
+                install_mmon "$@"
+            else
+                install_mmon 0
+            fi
+        ;;
+        "update_mmon")
+            shift
+            if [ $# -ge 1 ]; then
+                update_mmon "$@"
+            else
+                update_mmon 0
+            fi
         ;;
         "modify_agent_config")
             modify_agent_config 0
@@ -732,7 +839,12 @@ if [[ $# > 0 ]]; then
             update_script 0
         ;;
         "install_dashboard")
-            install_dashboard 0
+            shift
+            if [ $# -ge 1 ]; then
+                install_dashboard "$@"
+            else
+                install_dashboard 0
+            fi
         ;;
         "modify_dashboard_config")
             modify_dashboard_config 0

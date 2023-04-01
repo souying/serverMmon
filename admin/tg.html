@@ -6,16 +6,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>青蛇探针 | 分享服务</title>
+    <title>青蛇探针 | telegram推送</title>
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="font-awesome/css/font-awesome.css" rel="stylesheet">
     <!-- Toastr style -->
     <link href="css/plugins/toastr/toastr.min.css" rel="stylesheet">
-    <link href="css/plugins/chosen/bootstrap-chosen.css" rel="stylesheet">
     <link href="css/animate.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <link href="css/plugins/select2/select2.min.css" rel="stylesheet">
 
 </head>
 
@@ -28,7 +26,7 @@
                 <ul class="nav metismenu" id="side-menu">
                     <li class="nav-header">
                         <div class="dropdown profile-element"> <span>
-                                <b style="font-size:48px;">🐍</b>
+                            <b style="font-size:48px;">🐍</b>
                             </span>
                             <a data-toggle="dropdown" class="dropdown-toggle" href="#">
                                 <span class="clear">
@@ -57,10 +55,10 @@
                     <li>
                         <a href="shell.html"><i class="fa fa-indent"></i> <span class="nav-label">批量命令</span></a>
                     </li>
-                    <li class="active">
+                    <li>
                         <a href="share.html"><i class="fa fa-share-alt"></i> <span class="nav-label">分享服务</span></a>
                     </li>
-                    <li>
+                    <li class="active">
                         <a href="tg.html"><i class="fa fa-paper-plane-o"></i> <span class="nav-label">telegram推送</span></a>
                     </li>
                     <li>
@@ -97,17 +95,18 @@
                             </a>
                         </li>
                     </ul>
+
                 </nav>
             </div>
             <div class="row wrapper border-bottom white-bg page-heading">
                 <div class="col-sm-4">
-                    <h2>分享服务</h2>
+                    <h2>Telegram推送</h2>
                     <ol class="breadcrumb">
                         <li>
                             <a href="index.html">首页</a>
                         </li>
                         <li class="active">
-                            <strong>分享服务</strong>
+                            <strong>Telegram推送</strong>
                         </li>
                     </ol>
                 </div>
@@ -116,32 +115,47 @@
                 <div class="col-lg-12" style="margin-top: 10px;">
                     <div class="ibox float-e-margins">
                         <div class="ibox-title">
-                            <h5>分享服务</h5>
+                            <h5>Telegram信息配置</h5>
                         </div>
                         <div class="ibox-content">
                             <form method="get" class="form-horizontal">
-                                <input id="_idedit" type="hidden" value="">
-                                
-                                <div class="form-group">
-                                    <label class="col-sm-2 control-label">选择服务器</label>
+                                <input type="hidden" id="tgid">
+                                <div class="form-group"><label class="col-sm-2 control-label">Token</label>
                                     <div class="col-sm-10">
-                                        <select id="servershare" data-placeholder="选择服务器" class="chosen-select" multiple
-                                            style="width:350px;" tabindex="4">
-                                            <option value="United States">United States</option>
-                                            <option value="United Kingdom">United Kingdom</option>
-                                            <option value="Afghanistan">Afghanistan</option>
-                                            <option value="Aland Islands">Aland Islands</option>
-                                            <option value="Albania">Albania</option>
-                                        </select>
+                                        <input id="token" name="token" type="text" class="form-control">
                                         <span class="help-block m-b-none">
-                                            选择需要分享的服务器
+                                            telegram的token
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="form-group"><label class="col-sm-2 control-label">ChatID</label>
+                                    <div class="col-sm-10">
+                                        <input id="chatId" name="chatId" type="text" class="form-control"> 
+                                        <span class="help-block m-b-none">
+                                            telegram的chatId(用户或者群组)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="form-group"><label class="col-sm-2 control-label">重试次数</label>
+                                    <div class="col-sm-10">
+                                        <input id="number" name="number" type="number" class="form-control">
+                                        <span class="help-block m-b-none">
+                                            连接控制端失败多少次才会通知（建议100或者更多 次数越少推送越频繁）
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="form-group"><label class="col-sm-2 control-label">推送开关</label>
+                                    <div class="col-sm-10">
+                                        <input id="tgshow" name="tgshow" type="text" class="form-control"> 
+                                        <span class="help-block m-b-none">
+                                            true 为开启推送 false 为关闭推送
                                         </span>
                                     </div>
                                 </div>
                                 <div class="hr-line-dashed"></div>
                                 <div class="form-group">
                                     <div class="col-sm-4 col-sm-offset-2">
-                                        <span id="share" class="btn btn-primary pull-right" type="submit">生成地址</span>
+                                        <span id="tgbtn" class="btn btn-primary pull-right" type="submit">保存</span>
                                     </div>
                                 </div>
                             </form>
@@ -153,14 +167,31 @@
                 <div class="row">
                     <div class="col-lg-10 col-lg-offset-1">
                         <div class="ibox">
-                            <div class="ibox-content" id="serversharelist">
-                                
+                            <div class="ibox-content">
+                                <div class="text-center article-title" style="margin:20px 0px;">
+                                    <h2>
+                                        Telegram机器人Token和ChatID获取教程
+                                    </h2>
+                                </div>
+                                <p>
+                                    # 创建自己的机器人和Token：<br>
+                                    【1】添加好友 @BotFather<br>
+                                    【2】输入【 /start 】 -【 /newbot 】，给新机器人自定义起名（可中文），必须以bot结尾，不能和别人重复<br>
+                                    【3】起名新建成功后会输出Use this token to access the HTTP API，就是你这个机器人的Token<br><br>
+                                    # UserID的获取：<br>
+                                    【1】好友添加机器人 @getuseridbot<br>
+                                    【2】输入 /start ，即可获得自己的UserID。<br><br>
+                                    # ChatID的获取【群组or频道】：<br>
+                                    【1】群组or频道添加机器人 @get_id_bot<br>
+                                    【2】输入 /my_id@get_id_bot ，即可获得-100开头的Chat ID : -1001818202301。<br>
+                                </p>
+                                <hr>
+                                <h3 style="text-align: center;">-------------还不会请谷歌------------</h3>
+
                             </div>
                         </div>
                     </div>
                 </div>
-
-
             </div>
             <div class="footer">
                 <div class="pull-right">
@@ -179,8 +210,7 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
     <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
-    <!-- Chosen -->
-    <script src="js/plugins/chosen/chosen.jquery.js"></script>
+
     <!-- Custom and plugin javascript -->
     <script src="js/inspinia.js"></script>
     <script src="js/plugins/pace/pace.min.js"></script>
@@ -191,11 +221,31 @@
 
     <script>
         $(document).ready(function () {
-            $('.chosen-select').chosen({ width: "100%" });
-            
+
+            $('#loading-example-btn').click(function () {
+                btn = $(this);
+                simpleLoad(btn, true)
+
+                // Ajax example
+                //                $.ajax().always(function () {
+                //                    simpleLoad($(this), false)
+                //                });
+
+                simpleLoad(btn, false)
+            });
         });
 
-        
+        function simpleLoad(btn, state) {
+            if (state) {
+                btn.children().addClass('fa-spin');
+                btn.contents().last().replaceWith(" Loading");
+            } else {
+                setTimeout(function () {
+                    btn.children().removeClass('fa-spin');
+                    btn.contents().last().replaceWith(" Refresh");
+                }, 2000);
+            }
+        }
     </script>
 </body>
 
