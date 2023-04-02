@@ -36,7 +36,7 @@ function trim(str) {
 
 
 // 注册
-$(function(){
+$(function(){ 
     toastr.options = {
         closeButton: true,
         progressBar: true,
@@ -530,12 +530,49 @@ $(function(){
         })
     }
 
+    function serverUserinfo() {
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "GET",
+            url: api+"/user/info", //请求url
+            contentType: "application/json",
+            success: (res) => {
+                console.log('res', res)
+                if (!res.code) {
+                    let html = `
+                    <tr class="row">
+                        <td class="col-sm-6 control-label">用户名</td>
+                        <td class="col-sm-18">${res.data.username}</td>
+                    </tr>
+                    <tr class="row">
+                        <td class="col-sm-6 control-label">邮箱</td>
+                        <td class="col-sm-18">${res.data.email}</td>
+                    </tr>
+                    <tr class="row">
+                        <td class="col-sm-6 control-label">注册时间</td>
+                        <td class="col-sm-18">${res.data.today}</td>
+                    </tr>
+                    `;
+                    $("#serverlist").html(html)
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    }
+
     if(url.indexOf("admin/index.html")!=-1){
         serverFindHome();
 
     }
     if(url.indexOf("serverlist.html")!=-1){
         serverFindList()
+    }
+
+    if(url.indexOf("profile.html")!=-1) {
+        serverUserinfo()
     }
 
     // edit 

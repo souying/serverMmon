@@ -6,7 +6,7 @@ router.post('/login', async function(req, res) {
     if(req.body.username&&req.body.password){
         let data = await db.findOne({'username':req.body.username,'password':req.body.password});
         if(data){
-            vertoken.setToken(data.name, data.id).then(token => {
+            vertoken.setToken(data.username, data._id).then(token => {
                 console.log(token);
                 res.end(JSON.stringify({
                   code: 200,
@@ -68,6 +68,18 @@ router.post('/token',async function(req, res) {
     res.send(JSON.stringify({code:200,msg:"登录状态有效",data:{}}))
 });
 
-
+router.get('/info', async (req, res) => {
+    const { user_id } = req.data || {};
+    if (!user_id) {
+        res.send(JSON.stringify({ code:400, msg:"token 不合法", data:{} }))
+    } else {
+        const { password, ...user} = await db.findOne({ _id: user_id });
+        if (user) {
+            res.json({ code: 0, data: user })
+        } else {
+            res.json({ code: 400, msg:"查找用户失败", data: {} })
+        }
+    }
+});
 
 module.exports = router;
