@@ -3,7 +3,7 @@ const { server, config } = require("./server/app");
 server.listen({ host: config.listen.ip, port: config.listen.port });
 
 // eslint-disable-next-line no-console
-console.log(`serverMmon service listening on ${config.listen.ip}:${config.listen.port}`);
+console.log(`serverMmon service listening on http://${config.listen.ip}:${config.listen.port}`);
 
 server.on("error", (err) => {
 	if (err.code === "EADDRINUSE") {
