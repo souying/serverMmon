@@ -82,7 +82,7 @@ pre_check() {
         Get_Docker_Argu=" "
         Docker_IMG="ghcr.io/souying/mmon"
     else
-        GITHUB_RAW_URL="cdn.jsdelivr.net/gh/souying/serverMmon@main"
+        GITHUB_RAW_URL="gitee.com/souying/serverMmon/raw/main"
         #GITHUB_RAW_URL="gcore.jsdelivr.net/gh/souying/serverMmon@main"
         #GITHUB_RAW_URL="fastly.jsdelivr.net/gh/souying/serverMmon@main"
         #GITHUB_RAW_URL="cdn.zenless.top/gh/souying/serverMmon@main"
