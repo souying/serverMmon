@@ -105,7 +105,7 @@ app.post("/admin", express.static(publicPathAdmin, expressConfig));
 app.use("/admin", express.static(publicPathAdmin, expressConfig));
 app.get("/host/:host?", connect);
 app.post("/submit", (req, res) => {
-	connect(req, res, req.body.host, req.body.username, req.body.userpassword);
+	connect(req, res, req.body.host,req.body.port, req.body.username, req.body.userpassword);
 });
 app.get("/ssh", (req, res) => {
 	res.sendFile(path.join(path.join(publicPath, "login.html")));

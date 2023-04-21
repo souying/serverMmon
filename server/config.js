@@ -12,7 +12,7 @@ const nodeRoot = path.dirname(require.main.filename);
 // 默认配置
 const configDefault = {
 	listen: {
-		ip: "127.0.0.1",
+		ip: "0.0.0.0",
 		port: 5999,
 	},
 	user: {

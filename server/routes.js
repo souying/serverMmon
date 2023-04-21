@@ -11,7 +11,7 @@ function parseBool(str) {
 	return str.toLowerCase() === "true";
 }
 
-exports.connect = function connect(req, res, _host = null, _user = null, _password = null) {
+exports.connect = function connect(req, res, _host = null, _port = null, _user = null, _password = null) {
 	res.sendFile(path.join(path.join(publicPath, "client.html")));
 	let { host, port } = config.ssh;
 	let { text: header, background: headerBackground } = config.header;
@@ -34,6 +34,9 @@ exports.connect = function connect(req, res, _host = null, _user = null, _passwo
 		if (validator.isIP(`${_host}`) || validator.isFQDN(_host) || /^(([a-z]|[A-Z]|\d|[!^(){}\-_~])+)?\w$/.test(_host)) {
 			host = _host;
 		}
+	}
+	if(_port){
+		port = _port;
 	}
 	if (_user && _password) {
 		req.session.username = _user;

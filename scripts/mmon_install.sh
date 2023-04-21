@@ -33,7 +33,7 @@ elif [[ $(uname -s | tr '[A-Z]' '[a-z]') =~ "linux" ]]; then
 fi
 
 pre_check() {
-    [ "$os_other" != 1 ] && ! command -v systemctl >/dev/null 2>&1 && echo "不支持此系统：未找到 systemctl 命令" && exit 1
+    [ "$os_other" != 1 ] && ! command -v systemctl >/dev/null 2>&1 || ! systemctl list-units >/dev/null 2>&1 && echo "未找到此系统 systemctl 命令，尝试改用nohup挂起运行监控端！！!" && os_other=1
     
     # check root
     [[ $EUID -ne 0 ]] && echo -e "${red}错误: ${plain} 必须使用root用户运行此脚本！\n" && exit 1
@@ -41,10 +41,14 @@ pre_check() {
     ## os_arch
     if [[ $(uname -m | grep 'x86_64') != "" ]]; then
         os_arch="x64"
-        elif [[ $(uname -m | grep 'aarch64\|armv8b\|armv8l') != "" ]]; then
+    elif [[ $(uname -m | grep 'aarch64\|armv8b\|armv8l') != "" ]]; then
         os_arch="arm64"
-        elif [[ $(uname -m | grep 'arm') != "" ]]; then
-        os_arch="arm64"
+    elif [[ $(uname -m | grep 'armv7l\|arm') != "" ]]; then
+        #os_arch="arm"
+        echo -e "${yellow}监控端暂不支持arm32架构！！！${plain}"
+    else
+        echo -e "${red}当前$(uname -m)架构暂不支持使用！！！${plain}"
+        exit 1
     fi
     ## os_alpine
     
@@ -78,7 +82,10 @@ pre_check() {
         Get_Docker_Argu=" "
         Docker_IMG="ghcr.io/souying/mmon"
     else
-        GITHUB_RAW_URL="cdn.jsdelivr.net/gh/souying/serverMmon@main"
+        GITHUB_RAW_URL="gitee.com/souying/serverMmon/raw/main"
+        #GITHUB_RAW_URL="gcore.jsdelivr.net/gh/souying/serverMmon@main"
+        #GITHUB_RAW_URL="fastly.jsdelivr.net/gh/souying/serverMmon@main"
+        #GITHUB_RAW_URL="cdn.zenless.top/gh/souying/serverMmon@main"
         GITHUB_URL="dn-dao-github-mirror.daocloud.io"
         Get_Docker_URL="get.daocloud.io/docker"
         Get_Docker_Argu=" -s docker --mirror Aliyun"
@@ -161,7 +168,7 @@ version_mmon() {
     
     if [ ! -n "$m_version" ]; then
         echo -e "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/souying/serverMmon/releases/latest"
-        return 0
+        return 1
     fi
     m_version_array=($m_version)
 
@@ -213,15 +220,17 @@ download_mmon() {
     wget -t 2 -T 10 --no-check-certificate -O serverMmon-${os_name}-${os_arch}.zip https://${GITHUB_URL}/souying/serverMmon/releases/download/${version}/serverMmon-${os_name}-${os_arch}.zip >/dev/null 2>&1
     if [[ $? != 0 ]]; then
         echo -e "${red}Release 下载失败，请检查本机能否连接 ${GITHUB_URL}${plain}"
-        return 0
+        return 1
     fi
     
     unzip -qo serverMmon-${os_name}-${os_arch}.zip -d $MMON_MMON_PATH &&
     [[ ! -f $MMON_MMON_PATH/mmon ]] && mv $MMON_MMON_PATH/serverMmon-${os_name}-${os_arch} $MMON_MMON_PATH/mmon
+    chmod +x $MMON_MMON_PATH/mmon
     rm -rf serverMmon-${os_name}-${os_arch}.zip
 }
 
 install_mmon() {
+    [ -z ${os_arch} ] && return 1
     install_base
     echo -e "> 安装监控Mmon"
     # 选择监控Mmon版本
@@ -230,6 +239,7 @@ install_mmon() {
     else
         version_mmon
     fi
+    [ $? != 0 ] && return 0
     
     # 监控文件夹
     if [ ! -d "${MMON_MMON_PATH}" ]; then
@@ -255,6 +265,7 @@ install_mmon() {
     chmod 777 -R $MMON_MMON_PATH
     #下载监控Mmon
     download_mmon
+    [ $? != 0 ] && return 0
     
     #脚本加入环境变量
     curl -o /usr/bin/MMON -Ls https://${GITHUB_RAW_URL}/scripts/mmon_install.sh
@@ -283,6 +294,7 @@ update_mmon() {
     else
         version_mmon
     fi
+    [ $? != 0 ] && return 0
     
     #停止监控Mmon
     stop_agent 0
@@ -291,6 +303,7 @@ update_mmon() {
     #下载监控Mmon
     rm -rf $MMON_MMON_PATH/mmon
     download_mmon
+    [ $? != 0 ] && return 0
     
     #启动监控Mmon
     if [ "$os_other" != 1 ];then
@@ -368,7 +381,7 @@ EOF
         sed -i "/ExecStart/ s/$/${args}/" ${MMON_MMON_SERVICE}
     else
         echo "@reboot cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &" >> /etc/crontabs/root
-       [[ ! $(pgrep "crond") ]] && crond
+       [[ ! $(pgrep -f "crond") ]] && crond
     fi
     echo -e "${green}MMON ${MMON_VERSION}${plain} 安装完成，已设置开机自启"
     echo -e "MMON配置 ${green}加载成功，请稍等重启生效${plain}"
@@ -407,7 +420,7 @@ uninstall_agent() {
         systemctl daemon-reload
     elif [ "$os_other" = 1 ]; then
         sed -i "/mmon/d" /etc/crontabs/root
-        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep "mmon")
+        [[ $(pgrep -f "mmon$") ]] && kill -s 9 $(pgrep -f "mmon$")
     fi
     
     [ -d $MMON_MMON_PATH ] && rm -rf $MMON_MMON_PATH
@@ -420,7 +433,7 @@ uninstall_agent() {
 }
 
 clean_all() {
-    if [ -z "$(ls -A ${MMON_BASE_PATH})" ]; then
+    if [[ ! -d ${MMON_MMON_PATH} && ! -d ${MMON_DASHBOARD_PATH} ]]; then
         rm -rf ${MMON_BASE_PATH}
     fi
     [ -f /usr/bin/MMON ] && rm -rf /usr/bin/MMON 
@@ -428,18 +441,18 @@ clean_all() {
 }
 
 check_mmon() {
-    [[ ! -d ${MMON_MMON_PATH} || $(ls -A ${MMON_MMON_PATH}) == "" ]] && echo -e "${red}未安装监控端，请先执行安装监控Mmon！！！${plain}\n" && exit 1       
+    [ ! -d ${MMON_MMON_PATH} ] && echo -e "${red}未安装监控端，请先执行安装监控Mmon！！！${plain}\n" && exit 1       
 }
 
 check_dashboard() {
-    [[ ! -d ${MMON_DASHBOARD_PATH} || $(ls -A ${MMON_DASHBOARD_PATH}) == "" ]] && echo -e "${red}未安装探针面板，请先执行安装青蛇探针面板(serverMmon)！！！${plain}\n" && exit 1       
+    [ ! -d ${MMON_DASHBOARD_PATH} ] && echo -e "${red}未安装探针面板，请先执行安装青蛇探针面板(serverMmon)！！！${plain}\n" && exit 1       
 }
 
 status_agent() {
     check_mmon
     echo -e "> Mmon状态"
     if [ "$os_other" = 1 ]; then
-      [ $(pgrep "mmon") ] && echo -e "${green}Mmon运行正常！${plain}" || echo -e "${red}Mmon运行出错！${plain}"
+      [[ $(pgrep -f "mmon$") ]] && echo -e "${green}Mmon运行正常！${plain}" || echo -e "${red}Mmon运行出错！${plain}"
     else
         systemctl status mmon.service
     fi
@@ -453,9 +466,9 @@ restart_agent() {
     check_mmon
     echo -e "> 重启Mmon"
     if [ "$os_other" = 1 ]; then
-        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep "mmon")
+        [[ $(pgrep -f "mmon$") ]] && kill -s 9 $(pgrep -f "mmon$")
         cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
-       [ $(pgrep "mmon") ] && echo -e "${green}已重启Mmon${plain}" || echo -e "${red}Mmon启动出错！${plain}"
+       [[ $(pgrep -f "mmon$") ]] && echo -e "${green}已重启Mmon${plain}" || echo -e "${red}Mmon启动出错！${plain}"
     else
         systemctl restart mmon.service
     fi
@@ -469,8 +482,8 @@ stop_agent() {
     check_mmon
     echo -e "> 停止Mmon"
     if [ "$os_other" = 1 ]; then
-        [ $(pgrep "mmon") ] && kill -s 9 $(pgrep "mmon")
-        [ $(pgrep "mmon") ] && echo -e "${red}未能停止Mmon，请手动处理！！！${plain}" && return 1 || echo -e "${green}已停止Mmon${plain}"
+        [[ $(pgrep -f "mmon$") ]] && kill -s 9 $(pgrep -f "mmon$")
+        [[ $(pgrep -f "mmon$") ]] && echo -e "${red}未能停止Mmon，请手动处理！！！${plain}" && return 1 || echo -e "${green}已停止Mmon${plain}"
     else
         systemctl stop mmon.service
     fi
@@ -529,6 +542,7 @@ install_dashboard() {
             echo -e "${red}安装失败，请检查本机能否连接 ${Get_Docker_URL}${plain}"
             return 0
         fi
+        chmod +x /usr/local/bin/docker-compose
     fi
     
     if [[ $# -ge 1 && "$1" != "0" ]]; then
@@ -583,7 +597,7 @@ modify_dashboard_config() {
     
     echo -e "面板配置 ${green}修改成功，请稍等重启生效${plain}"
     
-    restart_and_update
+    restart_and_update 0
     
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -596,7 +610,7 @@ restart_and_update() {
     
     cd $MMON_DASHBOARD_PATH
     
-    docker compose version
+    docker compose version >/dev/null 2>&1
     if [[ $? == 0 ]]; then
         docker compose pull
         docker compose down
@@ -624,7 +638,7 @@ start_dashboard() {
     check_dashboard
     echo -e "> 启动面板"
     
-    docker compose version
+    docker compose version >/dev/null 2>&1
     if [[ $? == 0 ]]; then
         cd $MMON_DASHBOARD_PATH && docker compose up -d
     else
@@ -646,7 +660,7 @@ stop_dashboard() {
     check_dashboard
     echo -e "> 停止面板"
     
-    docker compose version
+    docker compose version >/dev/null 2>&1
     if [[ $? == 0 ]]; then
         cd $MMON_DASHBOARD_PATH && docker compose down
     else
@@ -668,7 +682,7 @@ show_dashboard_log() {
     check_dashboard
     echo -e "> 获取面板日志"
     
-    docker compose version
+    docker compose version >/dev/null 2>&1
     if [[ $? == 0 ]]; then
         cd $MMON_DASHBOARD_PATH && docker compose logs -f
     else
@@ -684,7 +698,7 @@ uninstall_dashboard() {
     check_dashboard
     echo -e "> 卸载管理面板"
     
-    docker compose version
+    docker compose version >/dev/null 2>&1
     if [[ $? == 0 ]]; then
         cd $MMON_DASHBOARD_PATH && docker compose down
     else

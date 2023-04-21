@@ -3,6 +3,8 @@ var request = require('request');
 var router = express.Router();
 const { Client } = require('ssh2');
 const db = require('../common/data').serverList;
+// 流量配置
+const liu = require('../common/data').liu;
 const { ping } = require("../common/ping");
 
 router.post('/serverAdd', async function(req, res) {
@@ -16,6 +18,7 @@ router.post('/serverAdd', async function(req, res) {
             "show":req.body.show,
             "username":req.body.username?req.body.username:null,
             "password":req.body.password?req.body.password:null,
+            "number":req.body.number?req.body.number:0,
             "updata":Date.now()
         };
         await db.insert(param);
@@ -39,6 +42,7 @@ router.post('/serverUpData',async function(req, res) {
             "show":req.body.show,
             "username":req.body.username?req.body.username:null,
             "password":req.body.password?req.body.password:null,
+            "number":req.body.number?req.body.number:0,
             "updata":Date.now()
         };
         console.log(param)
@@ -247,6 +251,50 @@ router.post('/ping',async function(req, res) {
     }
 });
 
+// 清空初始化统计流量
+router.post('/liu',async function(req, res) {
+    console.log(req.body.url)
+    if(req.body.url){
+        let _url = {
+            "url":req.body.url,
+        }
+        let RX = 1;
+        let TX = 1;
+        let liuData = await liu.findOne(_url);
+        if(liuData){
+            let param = {
+                "url":req.body.url,
+                "RX":RX,
+                "TX":TX,
+                "updata":Date.now()
+            };
+            // console.log(param)
+            await liu.update(_url,{ $set: param });
+            res.end(JSON.stringify({
+                code: 200,
+                msg: '清空流量成功',
+                data:{}
+                }))
+        }else{
+            let param = {
+                "url":req.body.url,
+                "RX":RX,
+                "TX":TX,
+                "updata":Date.now()
+            };
+            await liu.insert(param);
+            res.end(JSON.stringify({
+                code: 200,
+                msg: '清空流量成功',
+                data:{}
+            }))
+        }
+            
+        
+    }else{
+        res.send(JSON.stringify({code:400,msg:"参数缺失",data:{}}))
+    }
+});
 
 
 module.exports = router;

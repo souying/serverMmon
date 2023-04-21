@@ -27,9 +27,9 @@ const uptimeKumaData = (data,servers) => {
   🔹 *服务简称*:${data.region}    
   🔹 *地址*: [${data.url}](${data.url})  
   🔹 *状态*: ${data.getStatus ? "🟢 UP" : "🔴 DOWN"}  
-  🔹 *时间*: ${getTime(data.updata)}  
+  🔹 *时间*: ${getTime(Date.now())}  
   🔹 *推送间隔*: ${servers[data.url]*3} 秒  
-  🔹 *重试次数*: ${servers[data.url]} 次  
+  🔹 *重试次数*: ${servers[data.url]} 次   
   🔹 *监控面板*: [青蛇面板](https://github.com/souying/serverMmon)  
     `
   }

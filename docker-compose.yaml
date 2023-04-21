@@ -3,6 +3,7 @@ version: "3"
 services:
   mmon:
     image: grbhq/mmon:latest
+    container_name: mmon
     volumes:
       - ./Mmon/basedata:/Mmon/basedata
     ports:

@@ -203,6 +203,7 @@ $(function(){
         let show = $("#show").val();
         let username = $("#username").val()?$("#username").val():null;
         let password = $("#password").val()?$("#password").val():null;
+        let number = $("#number").val()?$("#number").val():0;
         if(!name){
             toastr.error("服务器别名不能为空")
             return;
@@ -236,7 +237,8 @@ $(function(){
             "token":trim(token),
             "show":trim(show),
             "username":trim(username),
-            "password":trim(password)
+            "password":trim(password),
+            "number":trim(number),
         }
 
         $.ajax({
@@ -330,6 +332,7 @@ $(function(){
                             <td>
                                 <a href="http://${res.data[i].url}" target="_blank"><i style="font-size:14px;" class="fa fa-home text-navy"></i></a>
                                 <a href="javascript:;" style="margin-left:15px;" data-item="${res.data[i]._id}" class="ping">PING</a>
+                                <a href="javascript:;" style="margin-left:15px;" data-item="${res.data[i].url}" class="liu">清空流量</a>
                             </td>
                         </tr>
                         `
@@ -586,6 +589,7 @@ $(function(){
         $("#showedit").val(serverItem[_id].show?serverItem[_id].show:"false");
         $("#usernameedit").val(serverItem[_id].username);
         $("#passwordedit").val(serverItem[_id].password);
+        $("#numberedit").val(serverItem[_id].number?serverItem[_id].number:0);
     }
     $(document).on("click",".serveredit",function(){
         let _self = $(this);
@@ -603,6 +607,7 @@ $(function(){
         let show = $("#showedit").val();
         let username = $("#usernameedit").val()?$("#usernameedit").val():null;
         let password = $("#passwordedit").val()?$("#passwordedit").val():null;
+        let number = $("#numberedit").val()?$("#numberedit").val():null;
         if(!name){
             toastr.error("服务器别名不能为空")
             return;
@@ -637,7 +642,8 @@ $(function(){
             "token":trim(token),
             "show":trim(show),
             "username":trim(username),
-            "password":trim(password)
+            "password":trim(password),
+            "number":trim(number)
         }
         console.log(param)
         $.ajax({
@@ -789,6 +795,33 @@ $(function(){
                 let res = JSON.parse(data)
                 if (res.code === 200) {
                     toastr.success(res.data)
+                    
+                } else {
+                    toastr.error(res.msg);
+                }
+            }
+        })
+    })
+
+    $(document).on("click",".liu",function(){
+        let _self = $(this);
+        let url = _self.attr("data-item");
+        let param = {
+            "url":trim(url)
+        }
+        $.ajax({
+            headers: {
+                "authorization": 'Bearer ' + window.localStorage.getItem('token')
+            },
+            type: "POST",
+            url: api+"/serverlist/liu", //请求url
+            contentType: "application/x-www-form-urlencoded",
+            data:param,
+            success: (data) => {
+                
+                let res = JSON.parse(data)
+                if (res.code === 200) {
+                    toastr.success(res.msg)
                     
                 } else {
                     toastr.error(res.msg);

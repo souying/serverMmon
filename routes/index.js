@@ -12,23 +12,30 @@ const db = require('../common/data').serverList;
 const dbshare = require('../common/data').share;
 // tg配置
 const tg = require('../common/data').tg;
+// 流量配置
+const liu = require('../common/data').liu;
 
 let serverData =  {};
-function createComprisonFunction(propertyName){
-  return function(object1,object2){
-      var value1 = object1[propertyName];
-      var value2 = object2[propertyName];
-      if(value1 < value2){
-          return -1;
-      }else if(value1 > value2){
-          return 1;
-      }else{
-          return 0;
-      }
+
+// 数组对象排序
+const compare = function (obj1, obj2) {
+  // console.log(obj1)
+  // console.log(obj2)
+  let val1 = obj1.number;  // 根据 number 比较
+  let val2 = obj2.number;
+  if (val1 < val2) {
+    return 1;
+  } else if (val1 > val2) {
+    return -1;
+  } else {
+    return 0;
   }
 }
 async function getServeOption(data) {
   let tgconfig = await tg.find();
+  let _url = {
+      "url":data.url,
+  }
   return new Promise((resolve, reject) => {
       request({
         url: 'http://'+data.url+"/serve",
@@ -39,9 +46,42 @@ async function getServeOption(data) {
         },
         timeout:2600,
         body: JSON.stringify(data)
-      }, function(error, response, body) {
+      }, async function(error, response, body) {
         if (!error && response.statusCode == 200) {
             if(body.code==200){
+                
+                let RX = 0;
+                let TX = 0;
+                let liuData = await liu.findOne({'url':data.url});
+                if(liuData){
+                  if(liuData.RX){
+                    RX = parseFloat(liuData.RX)+parseFloat(body.RX)*2
+                  }
+                  
+                  if(liuData.TX){
+                    TX = parseFloat(liuData.TX)+parseFloat(body.TX)*2
+                  }
+                  let param = {
+                      "url":data.url,
+                      "RX":RX,
+                      "TX":TX,
+                      "updata":Date.now()
+                  };
+                  // console.log(param)
+                  await liu.update(_url,{ $set: param });
+                  RX = param.RX;
+                  TX = param.TX;
+                }else{
+                  let param = {
+                      "url":data.url,
+                      "RX":parseFloat(body.RX)*2,
+                      "TX":parseFloat(body.TX)*2,
+                      "updata":Date.now()
+                  };
+                  await liu.insert(param);
+                  RX = param.RX;
+                  TX = param.TX;
+                }
               // console.log(serverData)
                 serverData[data.url] = {
                   name:data.name,
@@ -51,11 +91,25 @@ async function getServeOption(data) {
                   id:data._id,
                   updata:data.updata,
                   show:data.show,
+                  RX:RX,
+                  TX:TX,
+                  number:data.number?data.number:0,
                   data:body
                 }
                 servers[data.url] = 1;
                 
             }else{
+              let RX = 0;
+              let TX = 0;
+              let liuData = await liu.findOne({'url':data.url});
+              if(liuData){
+                if(liuData.RX){
+                  RX = parseFloat(liuData.RX)
+                }
+                if(liuData.TX){
+                  TX = parseFloat(liuData.TX)
+                }
+              }
               // console.log(serverData)
               serverData[data.url] = {
                 name:data.name,
@@ -65,6 +119,9 @@ async function getServeOption(data) {
                   id:data._id,
                   updata:data.updata,
                   show:data.show,
+                  RX:RX,
+                  TX:TX,
+                  number:data.number?data.number:0,
                   data:[]
               }
               if(servers[data.url]){
@@ -75,6 +132,17 @@ async function getServeOption(data) {
             }
             
         }else{
+          let RX = 0;
+          let TX = 0;
+          let liuData = await liu.findOne({'url':data.url});
+          if(liuData){
+            if(liuData.RX){
+              RX = parseFloat(liuData.RX)
+            }
+            if(liuData.TX){
+              TX = parseFloat(liuData.TX)
+            }
+          }
           // console.log(serverData)
           serverData[data.url] = {
             name:data.name,
@@ -84,6 +152,9 @@ async function getServeOption(data) {
               id:data._id,
               updata:data.updata,
               show:data.show,
+              RX:RX,
+              TX:TX,
+              number:data.number?data.number:0,
               data:[]
           }
           if(servers[data.url]){
@@ -100,7 +171,9 @@ async function getServeOption(data) {
             let number = Number(tgconfig[0].number)
             if(servers[data.url]==number){             //300m秒  5分钟提醒一次
               console.log(data.url+"掉线了")
-              callTGBot(uptimeKumaData(data,servers),tgconfig[0])
+              if(data.show=="true"){
+                callTGBot(uptimeKumaData(data,servers),tgconfig[0])
+              }
               setTimeout(function(){
                 servers[data.url] =1;
               },3000)
@@ -134,7 +207,7 @@ async function loop(){
             for(let  i = 0; i < config.length; i++) {
                 arrServer.push(serverData[config[i].url])
             }
-            let data = arrServer.sort(createComprisonFunction("updata"));
+            let data = arrServer.sort(compare)
             cache.set('items', data);
             newData = data;
             cache.set('data', data);

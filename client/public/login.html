@@ -16,6 +16,7 @@
         <form method="POST" action="/submit" class="login-form">
             <h2>🐍青蛇探针WEB-SSH 客户端</h2>
             <input id="ip" type="text" name="host" placeholder="服务器IP" />
+            <input id="port" type="number" name="port" value="22" placeholder="SSH端口(port)" />
             <input id="username" type="text" name="username" placeholder="用户名(root)" />
             <input id="password" type="password" name="userpassword" placeholder="服务器密码">
             <button type="submit">登录</button>
@@ -44,6 +45,7 @@
         if(password){
             $("#password").val(password)
         }
+        $("#port").val(22)
     })
 </script>
 
