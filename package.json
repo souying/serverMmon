@@ -1,6 +1,6 @@
 {
   "name": "serverMmon",
-  "version": "1.4",
+  "version": "1.6",
   "ignore": [
     ".gitignore"
   ],
@@ -8,6 +8,8 @@
   "description": "青蛇探针",
   "homepage": "https://github.com/souying/serverMmon",
   "keywords": [
+    "青蛇探针",
+    "serverMmon",
     "ssh",
     "webssh",
     "terminal",
