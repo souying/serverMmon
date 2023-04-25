@@ -1,0 +1,22 @@
+:root {
+	--rx: rgba(255, 255, 255, .6);
+	--tx: rgba(255, 255, 255, .3);
+	--rx-text: white;
+	--tx-text: white;
+	--text: white;
+	--background: white;
+	--dots: rgba(255, 255, 255, .3);
+	--card: rgba(255, 255, 255, .1);
+	--card-highlight: rgba(255, 255, 255, .3);
+	--chart-background: rgba(255, 255, 255, .1);
+}
+.wallpaper {
+	background-image: linear-gradient(45deg,  #5b47c1, #1078bb, #2c9531, #adad1b, #a760ba, #d62339, #e6982f);
+	background-size: 1000% 100%;
+	animation: wallpaper 60s linear infinite;
+}
+@keyframes wallpaper {
+	0% { background-position: 0% 0%; }
+	50% { background-position: 100% 0%; }
+	100% { background-position: 0% 0%; }
+}

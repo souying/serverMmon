@@ -1,0 +1,17 @@
+:root {
+	--rx: #02A181;
+	--tx: #00B896;
+	--rx-text: white;
+	--tx-text: white;
+	--text: #444;
+	--background: #F1FFFC;
+	--dots: rgba(0, 0, 0, .3);
+	--card: rgba(0, 0, 0, .03);
+	--card-highlight: rgba(255, 255, 255, .3);
+	--chart-background: rgba(0, 0, 0, .05);
+}
+.wallpaper {
+	background-image: url(../media/john-peters-EbOaaL8E_Z0-unsplash.jpg);
+	opacity: .1;
+	filter: contrast(200%);
+}

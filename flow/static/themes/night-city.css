@@ -1,0 +1,17 @@
+:root {
+	--rx: #e20b61;
+	--tx: #7ccfff;
+	--rx-text: white;
+	--tx-text: black;
+	--text: white;
+	--background: #000;
+	--dots: rgba(255,255,255,.3);
+	--card: rgba(255, 255, 255, .1);
+	--card-highlight: rgba(0, 0, 0, .3);
+	--chart-background: rgba(255, 255, 255, .1);
+}	
+.wallpaper {
+	background-image: url(../media/kevin-laminto-7PqRZK6rbaE-unsplash.jpg);
+	opacity: .7;
+	filter: contrast(110%);
+}

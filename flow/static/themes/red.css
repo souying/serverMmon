@@ -1,0 +1,36 @@
+:root {
+	--rx: #f34d44;
+	--tx: #5ff7ff;
+	--rx-text: #39141b;
+	--tx-text: #190205;
+	--text: #f34d44;
+	--background: #090d14;
+	--dots: rgba(243, 77, 68, .4);
+	--card: rgba(20, 17, 30, .5);
+	--card-highlight: rgba(243, 77, 68, .1);
+	--chart-background: rgba(243, 77, 68, .2);
+}	
+.wallpaper {
+	background: linear-gradient(to bottom, #39141b, #090d14);
+}
+.reports__cards li {
+	border: 1px solid #f34d44;
+	border-bottom-right-radius: 15px;
+}
+.reports__cards .col-chart div {
+	width: calc(100% - 4px);
+	margin: 2px;
+}
+.chart-view__menu button:hover, 
+.chart-view__menu button.active {
+	color: var(--tx);
+}
+
+/*
+Colors:
+#f3c338 yellow
+#f34d44 red
+#5ff7ff blue
+#14111e inside elements
+#090d14 black
+*/

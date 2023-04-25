@@ -518,6 +518,8 @@ $(function(){
                                     class="fa fa-desktop"></i> Ssh </a>
                                 <a  href="javascript:;" class="shell btn btn-info btn-sm hidden-xs"><i
                                     class="fa fa-desktop"></i> 脚本 </a>
+                                <a  href="javascript:;" class="flow btn btn-info btn-sm hidden-xs"><i
+                                    class="fa fa-desktop"></i> 流量 </a>
                                 <a href="javascript:;" class="deletebtn btn btn-danger btn-sm"><i
                                     class="fa fa fa-times"></i> 删除 </a>
                             </td>
@@ -715,6 +717,7 @@ $(function(){
         let ip = url.split(":")[0]
         window.open('/ssh/?username='+username+'&ip='+ip+'&password='+password)
     })
+    
 
     function copy(e) {
         let transfer = document.createElement('input');
@@ -749,6 +752,12 @@ $(function(){
         transfer.blur();
         console.log('复制成功');
         document.body.removeChild(transfer);
+    })
+
+    $(document).on("click",".flow",function(){
+        let _self = $(this);
+        let _id = _self.parents("tr").find("._id").val();
+        window.location.href = "/flow/?id="+_id
     })
 
     $(document).on("click",".ping",function(){

@@ -299,6 +299,90 @@ router.post('/share',async function(req, res, next) {
   
 });
 
+router.get('/dbiflist',async function(req, res, next) {
+  // console.log(req.query.id)
+  if(req.query.id){
+    try {
+      let config = await db.findOne({"_id":req.query.id});
+      if(config){
+        request({
+          url: 'http://'+config.url+"/dbiflist",
+          method: "POST",
+          json: true,
+          headers: {
+              "content-type": "application/json",
+          },
+          timeout:2600,
+        }, async function(error, response, body) {
+          if (!error && response.statusCode == 200) {
+            console.log(body)
+            if(body.code==200){
+              res.send(JSON.stringify(body.data));
+            }else{
+              res.send(JSON.stringify({}));
+            }
+          }
+        });
+      }else{
+        res.send(JSON.stringify({}));
+      }
+      
+    } catch (error) {
+      console.log(error)
+    }
+  }else{
+    try {
+      res.send(JSON.stringify({}));
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  
+  
+});
+
+router.get('/interface',async function(req, res, next) {
+  // console.log(req.query.id)
+  if(req.query.id&&req.query.iface){
+    try {
+      let config = await db.findOne({"_id":req.query.id});
+      if(config){
+        request({
+          url: 'http://'+config.url+"/interface?iface="+req.query.iface,
+          method: "POST",
+          json: true,
+          headers: {
+              "content-type": "application/json",
+          },
+          timeout:2600,
+        }, async function(error, response, body) {
+          if (!error && response.statusCode == 200) {
+            console.log(body)
+            if(body.code==200){
+              res.send(JSON.stringify(body.data));
+            }else{
+              res.send(JSON.stringify({}));
+            }
+          }
+        });
+      }else{
+        res.send(JSON.stringify({}));
+      }
+      
+    } catch (error) {
+      console.log(error)
+    }
+  }else{
+    try {
+      res.send(JSON.stringify({}));
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  
+  
+});
+
 
 
 module.exports = router;

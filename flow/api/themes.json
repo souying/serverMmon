@@ -1,0 +1,9 @@
+[
+	{ "title": "Dark Green", "file": "/static/themes/dark-green.css" },
+	{ "title": "Light Gren", "file": "/static/themes/light-green.css" },
+	{ "title": "Night City", "file": "/static/themes/night-city.css" },
+	{ "title": "Red", "file": "/static/themes/red.css" },
+	{ "title": "Cyberpunk", "file": "/static/themes/cyberpunk-2077.css" },
+	{ "title": "The Division", "file": "/static/themes/the-division.css" },
+	{ "title": "Gradients", "file": "/static/themes/gradients.css" }	
+]

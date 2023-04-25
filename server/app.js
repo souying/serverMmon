@@ -20,6 +20,7 @@ const nodeRoot = path.dirname(require.main.filename);
 const publicPath = path.join(nodeRoot, "client", "public");
 const publicPathHome = path.join(nodeRoot, "home");
 const publicPathAdmin = path.join(nodeRoot, "admin");
+const publicPathflow = path.join(nodeRoot, "flow");
 console.log(path.join(nodeRoot, "home"))
 const express = require("express");
 
@@ -103,6 +104,8 @@ app.post("/login", express.static(publicPath, expressConfig));
 app.use("/login", express.static(publicPath, expressConfig));
 app.post("/admin", express.static(publicPathAdmin, expressConfig));
 app.use("/admin", express.static(publicPathAdmin, expressConfig));
+app.post("/flow", express.static(publicPathflow, expressConfig));
+app.use("/flow", express.static(publicPathflow, expressConfig));
 app.get("/host/:host?", connect);
 app.post("/submit", (req, res) => {
 	connect(req, res, req.body.host,req.body.port, req.body.username, req.body.userpassword);
@@ -129,6 +132,9 @@ app.use(jwt({
 		'/user/login',
 		'/user/reg',
 		'/server/list',
+		'/server/share',
+		'/server/interface',
+		'/server/dbiflist',
 		'/submit',
 		'/socket.io'
 	]  //不需要验证的接口名称

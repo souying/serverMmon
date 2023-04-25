@@ -1,0 +1,17 @@
+:root {
+	--rx: #fe7100;
+	--tx: #fea702;
+	--rx-text: black;
+	--tx-text: black;
+	--text: white;
+	--background: #000;
+	--dots: rgba(254, 113, 0, .5);
+	--card:  linear-gradient(to right, rgba(254, 113, 0, .1), transparent);
+	--card-highlight: linear-gradient(to right, rgba(254, 167, 2, .2), transparent);
+	--chart-background: rgba(254, 113, 0, .1);
+}
+.wallpaper {
+	background-image: url(../media/the-division-2.jpeg);
+	opacity: .7;
+}
+

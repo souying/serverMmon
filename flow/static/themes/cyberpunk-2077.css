@@ -1,0 +1,24 @@
+:root {
+	--rx: #F3E600;
+	--tx: #00F0FF;
+	--rx-text: #554B41;
+	--tx-text: #554B41;
+	--text: white;
+	--background: #000;
+	--dots: rgba(255, 255, 255, .4);
+	--card: rgba(255, 255, 255, .1);
+	--card-highlight: rgba(0, 0, 0, .4);
+	--chart-background: rgba(255, 255, 255, .1);
+}	
+.wallpaper {
+	background-image: url(../media/cyberpunk-2077.jpg);
+	opacity: .7;
+}
+
+/*
+Colors:
+#F3E600 yellow
+#FF003C red
+#00F0FF blue
+#554B41 brown
+*/
