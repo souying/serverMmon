@@ -83,7 +83,7 @@ bash <(curl -sL https://cdn.jsdelivr.net/gh/souying/serverMmon@main/scripts/mmon
 ```  
 or
 ```
-bash <(curl -sL https://cdn.zenless.top/gh/souying/serverMmon@main/scripts/mmon_install.sh) 
+bash <(curl -sL https://gitee.com/souying/serverMmon/raw/main/scripts/mmon_install.sh) 
 ```
 - 一键安装脚本(国外)：  
 
@@ -97,7 +97,8 @@ bash <(curl -sL https://raw.githubusercontent.com/souying/serverMmon/main/script
 ```
 //国内服务器一键安装脚本  
 
-bash <(curl -sL https://cdn.zenless.top/gh/souying/serverMmon@main/scripts/mmon_install.sh)  
+bash <(curl -sL https://gitee.com/souying/serverMmon/raw/main/scripts/mmon_install.sh)  
+
 or
 bash <(curl -sL https://cdn.jsdelivr.net/gh/souying/serverMmon@main/scripts/mmon_install.sh)  
 //国外服务器一键安装脚本  

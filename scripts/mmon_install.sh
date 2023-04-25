@@ -11,7 +11,7 @@ MMON_BASE_PATH="/opt/serverMmon"
 MMON_DASHBOARD_PATH="${MMON_BASE_PATH}/dashboard"
 MMON_MMON_PATH="${MMON_BASE_PATH}/mmon"
 MMON_MMON_SERVICE="/etc/systemd/system/mmon.service"
-MMON_VERSION="v1.0.1"
+MMON_VERSION="v1.0.2"
 
 cur_dir=$(pwd)
 
@@ -281,7 +281,7 @@ install_mmon() {
     fi
 
     if [[ $# == 0 ]]; then
-        before_show_menu
+        show_menu
     fi
 }
 
@@ -353,6 +353,7 @@ modify_agent_config() {
     else
         agent_token=$1
         agent_port=$2
+        shift 2
     fi
     
     # 写入配置文件config.json
@@ -380,8 +381,9 @@ EOF
         args=" $*"
         sed -i "/ExecStart/ s/$/${args}/" ${MMON_MMON_SERVICE}
     else
-        echo "@reboot cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &" >> /etc/crontabs/root
-       [[ ! $(pgrep -f "crond") ]] && crond
+        (crontab -l | grep -v "nohup ./mmon") | crontab -
+        [ $os_name == "alpine" ] && echo "@reboot cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &" >> /etc/crontabs/root && [[ ! $(pgrep -f "crond") ]] && crond ||
+        (echo "@reboot cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &"; crontab -l) | crontab - && [[ ! $(pgrep -f "cron") ]] && cron
     fi
     echo -e "${green}MMON ${MMON_VERSION}${plain} 安装完成，已设置开机自启"
     echo -e "MMON配置 ${green}加载成功，请稍等重启生效${plain}"
@@ -392,6 +394,30 @@ EOF
         systemctl restart mmon
     else
         cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
+    fi
+    
+    # 选择安装VnStat流量监控插件
+    if (! command -v vnstat >/dev/null 2>&1); then
+        echo "检测到未安装VnStat流量监控(用于Mmon流量统计的插件)"
+        if [ $# -lt 1 ]; then
+            read -e -r -p "是否需要安装? [Y/n] " option
+            case $option in
+                [yY][eE][sS] | [yY])
+                    echo "确认安装"
+                    install_vnstat 0
+                ;;
+                [nN][oO] | [nN])
+                    echo "退出安装"
+                    #exit 0
+                ;;
+                *)
+                    echo "默认安装"
+                    install_vnstat 0
+                ;;
+            esac
+        elif [ "$1" == "-y" ]; then
+            install_vnstat 0
+        fi
     fi
     
     if [[ $# == 0 ]]; then
@@ -419,7 +445,8 @@ uninstall_agent() {
         rm -rf $MMON_MMON_SERVICE
         systemctl daemon-reload
     elif [ "$os_other" = 1 ]; then
-        sed -i "/mmon/d" /etc/crontabs/root
+        #sed -i "/mmon/d" /etc/crontabs/root
+        (crontab -l | grep -v "nohup ./mmon") | crontab -
         [[ $(pgrep -f "mmon$") ]] && kill -s 9 $(pgrep -f "mmon$")
     fi
     
@@ -427,8 +454,13 @@ uninstall_agent() {
     clean_all
     echo -e "${green}已成功卸载监控Mmon！${plain}"
     
+    # 卸载VnStat流量监控命令
+    if (command -v vnstat >/dev/null 2>&1); then
+        uninstall_vnstat 0
+    fi
+    
     if [[ $# == 0 ]]; then
-        before_show_menu
+        show_menu
     fi
 }
 
@@ -552,7 +584,7 @@ install_dashboard() {
     fi
     
     if [[ $# == 0 ]]; then
-        before_show_menu
+        show_menu
     fi
 }
 
@@ -711,7 +743,78 @@ uninstall_dashboard() {
     clean_all
     
     if [[ $# == 0 ]]; then
-        before_show_menu
+        show_menu
+    fi
+}
+
+install_vnstat() {
+    echo -e "> 安装VnStat流量监控"
+    
+    [ "$os_other" = 1 ] && echo -e "${red}不支持当前$os_id系统：未找到 systemctl 命令${plain}" && exit 1 ||
+    (command -v vnstat >/dev/null 2>&1) && echo -e "${green}已安装过VnStat流量监控，无需再安装！${plain}" && return 1
+    #install_soft vnstat
+    # 安装依赖环境
+    if [[ $os_id =~ "ubuntu" || $os_id =~ "debian" ]]; then
+        install_soft tar build-essential libsqlite3-dev libpcap-dev
+    elif [[ $os_id =~ "centos" ]]; then
+        install_soft tar gcc make sqlite-devel libpcap-devel
+    else
+        echo -e "${red}当前$os_id系统暂不适配安装VnStat流量监控，请手动安装！${plain}" && exit 1
+    fi
+    
+    # 编译安装
+    mkdir -p /tmp -m 777 && cd /tmp
+    echo -e "正在下载VnStat源码到/tmp"
+    echo -e "https://humdi.net/vnstat/vnstat-2.10.tar.gz"
+    curl -kL https://humdi.net/vnstat/vnstat-2.10.tar.gz -# -o vnstat-2.10.tar.gz
+    [[ $? != 0 ]] && echo -e "${green}下载出错！请检查本机能否连接https://humdi.net/vnstat${plain}" && return 1
+    tar xzf vnstat-2.10.tar.gz && cd /tmp/vnstat-2.10
+    ./configure --prefix=/usr --sysconfdir=/etc
+    make -j$(nproc) && make install
+    
+    # 复制vnstat服务文件
+    cp examples/systemd/simple/vnstat.service /usr/lib/systemd/system
+    rm -rf /tmp/vnstat-2.10.tar.gz
+    # 启动vnstat服务
+    systemctl daemon-reload
+    systemctl enable vnstat
+    systemctl unmask vnstat
+    systemctl restart vnstat
+    [[ $? == 0 ]] && echo -e "\n${green}VnStat流量监控 启动成功！${plain}" || echo -e "\n${red}VnStat流量监控 服务启动出错，请手动处理！${plain}"
+    
+    if [[ $# == 0 ]]; then
+        show_menu
+    fi
+}
+
+uninstall_vnstat() {
+    echo -e "> 卸载VnStat流量监控"
+    
+    (! command -v vnstat >/dev/null 2>&1) && echo -e "${red}未安装VnStat流量监控，请先安装！${plain}" && return 1
+    if [ -d /tmp/vnstat-2.10 ]; then
+        cd /tmp/vnstat-2.10
+    else
+        echo -e "\n${red}未检测到vnstat-2.10文件夹，请手动卸载VnStat！${plain}"
+        return 1
+    fi
+    # 停止vnstat服务
+    systemctl disable vnstat
+    systemctl stop vnstat
+    systemctl daemon-reload
+    # 使用源码卸载
+    ./configure --prefix=/usr --sysconfdir=/etc && make uninstall
+    
+    [[ $? == 0 ]] && echo -e "\n${green}VnStat流量监控 卸载成功！${plain}"
+    # 清理残留文件
+    cd ${cur_dir}
+    [ -d /tmp/vnstat-2.10 ] && rm -rf /tmp/vnstat-2.10
+    [ -s /etc/vnstat.conf ] && rm -rf /etc/vnstat.conf
+    [ -d /var/lib/vnstat ] && rm -rf /var/lib/vnstat
+    [ -s /usr/lib/systemd/system/vnstat.service ] && rm -rf /usr/lib/systemd/system/vnstat.service
+    echo -e "\n${green}VnStat残留文件 清理完成！${plain}"
+    
+    if [[ $# == 0 ]]; then
+        show_menu
     fi
 }
 
@@ -738,6 +841,10 @@ show_usage() {
     echo "./mmon_install.sh uninstall_dashboard         - 卸载管理面板"
     echo "./mmon_install.sh update_script              - 更新脚本"
     echo "--------------------------------------------------------"
+    echo "青蛇探针面板 插件使用: "
+    echo "./mmon_install.sh install_vnstat             - 安装VnStat流量监控"
+    echo "./mmon_install.sh uninstall_vnstat           - 卸载VnStat流量监控"
+    echo "--------------------------------------------------------"
 }
 
 show_menu() {
@@ -761,11 +868,13 @@ show_menu() {
     ${green}14.${plain} 获取面板日志
     ${green}15.${plain} 卸载管理面板
     ————————————————-
-    ${green}16.${plain} 更新脚本
+    ${green}16.${plain} 安装VnStat流量监控
+    ${green}17.${plain} 卸载VnStat流量监控
+    ${green}18.${plain} 更新脚本
     ————————————————-
     ${green}0.${plain}  退出脚本
     "
-    echo && read -ep "请输入选择 [0-16]: " num
+    echo && read -ep "请输入选择 [0-18]: " num
     
     case "${num}" in
         0)
@@ -817,10 +926,16 @@ show_menu() {
             uninstall_dashboard
         ;;
         16)
+            install_vnstat
+        ;;
+        17)
+            uninstall_vnstat
+        ;;
+        18)
             update_script
         ;;
         *)
-            echo -e "${red}请输入正确的数字 [0-16]${plain}"
+            echo -e "${red}请输入正确的数字 [0-18]${plain}"
         ;;
     esac
 }
@@ -865,6 +980,12 @@ if [[ $# > 0 ]]; then
         ;;
         "update_script")
             update_script 0
+        ;;
+        "install_vnstat")
+            install_vnstat 0
+        ;;
+        "uninstall_vnstat")
+            uninstall_vnstat 0
         ;;
         "install_dashboard")
             shift
