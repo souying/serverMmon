@@ -50,8 +50,8 @@ async function getServeOption(data) {
         if (!error && response.statusCode == 200) {
             if(body.code==200){
                 
-                let RX = 0;
-                let TX = 0;
+                let RX = 1;
+                let TX = 1;
                 let liuData = await liu.findOne({'url':data.url});
                 if(liuData){
                   if(liuData.RX){
@@ -99,8 +99,8 @@ async function getServeOption(data) {
                 servers[data.url] = 1;
                 
             }else{
-              let RX = 0;
-              let TX = 0;
+              let RX = 1;
+              let TX = 1;
               let liuData = await liu.findOne({'url':data.url});
               if(liuData){
                 if(liuData.RX){
@@ -132,8 +132,8 @@ async function getServeOption(data) {
             }
             
         }else{
-          let RX = 0;
-          let TX = 0;
+          let RX = 1;
+          let TX = 1;
           let liuData = await liu.findOne({'url':data.url});
           if(liuData){
             if(liuData.RX){
