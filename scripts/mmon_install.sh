@@ -11,7 +11,7 @@ MMON_BASE_PATH="/opt/serverMmon"
 MMON_DASHBOARD_PATH="${MMON_BASE_PATH}/dashboard"
 MMON_MMON_PATH="${MMON_BASE_PATH}/mmon"
 MMON_MMON_SERVICE="/etc/systemd/system/mmon.service"
-MMON_VERSION="v1.0.2"
+MMON_VERSION="v1.0.3"
 
 cur_dir=$(pwd)
 
