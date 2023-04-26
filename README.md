@@ -21,7 +21,7 @@
 
 * serverMmon(青蛇探针)是nodeJs开发的一个酷炫高逼格的云探针、云监控、服务器云监控、多服务器探针~。
 * 在线演示：http://106.126.11.114:5999/    
-* 流量统计演示：http://106.126.11.114:5999/flow/?id=VNwxAsMZq8CRtdBU      
+* 流量统计演示：http://106.126.11.114:5999/flow/?id=Fi3gXtMAtc97bPoo         
 * Telegram群组：https://t.me/servermmon  
 
 
