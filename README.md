@@ -65,6 +65,7 @@
 # 自动部署：
 
 【服务端】
+<s>
 - Docker一键命令：
 
 ```
@@ -81,6 +82,7 @@ grbhq/mmon:latest
 ```
 wget -O docker-compose.yaml https://raw.githubusercontent.com/souying/serverMmon/main/docker-compose.yaml && docker-compose up -d
 ```  
+</s>
 
 - 一键安装脚本(国内)：  
 
@@ -108,6 +110,7 @@ bash <(curl -sL https://gitee.com/souying/serverMmon/raw/main/scripts/mmon_insta
 
 or
 bash <(curl -sL https://cdn.jsdelivr.net/gh/souying/serverMmon@main/scripts/mmon_install.sh)  
+
 //国外服务器一键安装脚本  
 
 bash <(curl -sL https://raw.githubusercontent.com/souying/serverMmon/main/scripts/mmon_install.sh) 

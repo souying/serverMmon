@@ -118,7 +118,7 @@ update_script() {
         echo -e "脚本获取失败，请检查本机能否链接 https://${GITHUB_RAW_URL}/scripts/mmon_install.sh"
         return 1
     fi
-    echo -e "当前最新版本为: ${new_version}"
+    echo -e "当前脚本最新版本为: ${new_version}"
     
     #脚本加入环境变量
     curl -o /usr/bin/MMON -Ls https://${GITHUB_RAW_URL}/scripts/mmon_install.sh
@@ -207,6 +207,8 @@ version_mmon() {
     
     if [ $# -lt 1 ]; then
         select_version
+    elif [[ "$1" == "latest" ]]; then
+        version="${m_version_array[-1]}" && echo "您选择了版本号：${version}"
     elif [[ " ${m_version_array[*]} " == *" $1 "* ]]; then
         version=$1 && echo "您选择了版本号：${version}"
     else    
@@ -291,6 +293,7 @@ update_mmon() {
     #选择监控Mmon版本
     if [[ $# -ge 1 && "$1" != "0" ]]; then
         version_mmon "$@"
+        shift
     else
         version_mmon
     fi
@@ -311,7 +314,7 @@ update_mmon() {
     else
         cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
     fi
-    echo -e "${green}监控Mmon更新完成！${plain}"
+    echo -e "${green}监控Mmon ${version}更新完成！${plain}"
     
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -353,7 +356,7 @@ modify_agent_config() {
     else
         agent_token=$1
         agent_port=$2
-        shift 2
+        shift 2; shift
     fi
     
     # 写入配置文件config.json
@@ -368,18 +371,26 @@ EOF
     [ -s ${MMON_MMON_PATH}/config.json ] && echo -e "写入配置文件完成！！！"
     
     if [ "$os_other" != 1 ];then
-        echo -e "${red}开始下载mmon.service服务文件...${plain}"
-        wget -t 2 -T 10 --no-check-certificate -O $MMON_MMON_SERVICE https://${GITHUB_RAW_URL}/scripts/mmon.service >/dev/null 2>&1
-        if [[ $? != 0 ]]; then
-            echo -e "${red}mmon.service服务文件下载失败，请检查本机能否连接 ${GITHUB_RAW_URL}${plain}"
-            return 0
-        fi
-    fi
-
-    if [ "$os_other" != 1 ];then
     
-        args=" $*"
-        sed -i "/ExecStart/ s/$/${args}/" ${MMON_MMON_SERVICE}
+        echo -e "\n${red}开始写入mmon.service服务文件到$MMON_MMON_SERVICE${plain}"
+        cat << EOF > $MMON_MMON_SERVICE
+[Unit]
+Description=MMON
+After=syslog.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=$MMON_MMON_PATH/
+ExecStart=$MMON_MMON_PATH/mmon
+Restart=always
+#Environment=DEBUG=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        [ -s $MMON_MMON_SERVICE ] && echo -e "写入mmon.service服务文件完成！！！"
     else
         (crontab -l | grep -v "nohup ./mmon") | crontab -
         [ $os_name == "alpine" ] && echo "@reboot cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &" >> /etc/crontabs/root && [[ ! $(pgrep -f "crond") ]] && crond ||
@@ -396,10 +407,10 @@ EOF
         cd ${MMON_MMON_PATH} && nohup ./mmon >/dev/null 2>&1 &
     fi
     
-    # 选择安装VnStat流量监控插件
-    if (! command -v vnstat >/dev/null 2>&1); then
-        echo "检测到未安装VnStat流量监控(用于Mmon流量统计的插件)"
-        if [ $# -lt 1 ]; then
+    # 选择安装vnStat流量监控插件
+    if (! command -v vnstat >/dev/null 2>&1) && [[ $# -ge 1 ]]; then
+        echo "检测到未安装vnStat流量监控(用于Mmon流量统计的插件)"
+        if [ "$1" == "0" ]; then
             read -e -r -p "是否需要安装? [Y/n] " option
             case $option in
                 [yY][eE][sS] | [yY])
@@ -454,7 +465,7 @@ uninstall_agent() {
     clean_all
     echo -e "${green}已成功卸载监控Mmon！${plain}"
     
-    # 卸载VnStat流量监控命令
+    # 卸载vnStat流量监控命令
     if (command -v vnstat >/dev/null 2>&1); then
         uninstall_vnstat 0
     fi
@@ -467,9 +478,9 @@ uninstall_agent() {
 clean_all() {
     if [[ ! -d ${MMON_MMON_PATH} && ! -d ${MMON_DASHBOARD_PATH} ]]; then
         rm -rf ${MMON_BASE_PATH}
+        [ -f /usr/bin/MMON ] && rm -rf /usr/bin/MMON 
+        [ -L /usr/bin/mmon ] && rm -rf /usr/bin/mmon
     fi
-    [ -f /usr/bin/MMON ] && rm -rf /usr/bin/MMON 
-    [ -L /usr/bin/mmon ] && rm -rf /usr/bin/mmon
 }
 
 check_mmon() {
@@ -660,6 +671,8 @@ restart_and_update() {
     else
         echo -e "${red}重启失败，可能是因为启动时间超过了两秒，请稍后查看日志信息${plain}"
     fi
+    # 清理无名<none>镜像
+    docker rmi -f $(docker images -f dangling=true -q) > /dev/null 2>&1
     
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -740,6 +753,7 @@ uninstall_dashboard() {
     rm -rf $MMON_DASHBOARD_PATH
     docker rmi -f ghcr.io/souying/mmon:latest > /dev/null 2>&1
     docker rmi -f grbhq/mmon:latest > /dev/null 2>&1
+    docker rmi -f $(docker images -f dangling=true -q) > /dev/null 2>&1
     clean_all
     
     if [[ $# == 0 ]]; then
@@ -748,10 +762,10 @@ uninstall_dashboard() {
 }
 
 install_vnstat() {
-    echo -e "> 安装VnStat流量监控"
+    echo -e "> 安装vnStat流量监控"
     
-    [ "$os_other" = 1 ] && echo -e "${red}不支持当前$os_id系统：未找到 systemctl 命令${plain}" && exit 1 ||
-    (command -v vnstat >/dev/null 2>&1) && echo -e "${green}已安装过VnStat流量监控，无需再安装！${plain}" && return 1
+    [ "$os_other" = 1 ] && echo -e "${red}不支持当前$os_id系统：未找到 systemctl 命令${plain}\n" && exit 1 ||
+    (command -v vnstat >/dev/null 2>&1) && echo -e "${green}已安装过vnStat流量监控，无需再安装！${plain}\n" && return 1
     #install_soft vnstat
     # 安装依赖环境
     if [[ $os_id =~ "ubuntu" || $os_id =~ "debian" ]]; then
@@ -759,12 +773,12 @@ install_vnstat() {
     elif [[ $os_id =~ "centos" ]]; then
         install_soft tar gcc make sqlite-devel libpcap-devel
     else
-        echo -e "${red}当前$os_id系统暂不适配安装VnStat流量监控，请手动安装！${plain}" && exit 1
+        echo -e "${red}当前$os_id系统暂不适配安装vnStat流量监控，请手动安装！${plain}\n" && exit 1
     fi
     
     # 编译安装
     mkdir -p /tmp -m 777 && cd /tmp
-    echo -e "正在下载VnStat源码到/tmp"
+    echo -e "正在下载vnStat源码到/tmp"
     echo -e "https://humdi.net/vnstat/vnstat-2.10.tar.gz"
     curl -kL https://humdi.net/vnstat/vnstat-2.10.tar.gz -# -o vnstat-2.10.tar.gz
     [[ $? != 0 ]] && echo -e "${green}下载出错！请检查本机能否连接https://humdi.net/vnstat${plain}" && return 1
@@ -773,14 +787,15 @@ install_vnstat() {
     make -j$(nproc) && make install
     
     # 复制vnstat服务文件
-    cp examples/systemd/simple/vnstat.service /usr/lib/systemd/system
+    \cp examples/systemd/simple/vnstat.service /usr/lib/systemd/system
     rm -rf /tmp/vnstat-2.10.tar.gz
     # 启动vnstat服务
     systemctl daemon-reload
     systemctl enable vnstat
     systemctl unmask vnstat
     systemctl restart vnstat
-    [[ $? == 0 ]] && echo -e "\n${green}VnStat流量监控 启动成功！${plain}" || echo -e "\n${red}VnStat流量监控 服务启动出错，请手动处理！${plain}"
+    [[ $? == 0 ]] && echo -e "\n${green}vnStat流量监控 启动成功！${plain}" || echo -e "\n${red}vnStat流量监控 服务启动出错，请手动处理！${plain}"
+    restart_agent 0
     
     if [[ $# == 0 ]]; then
         show_menu
@@ -788,13 +803,13 @@ install_vnstat() {
 }
 
 uninstall_vnstat() {
-    echo -e "> 卸载VnStat流量监控"
+    echo -e "> 卸载vnStat流量监控"
     
-    (! command -v vnstat >/dev/null 2>&1) && echo -e "${red}未安装VnStat流量监控，请先安装！${plain}" && return 1
+    (! command -v vnstat >/dev/null 2>&1) && echo -e "${red}未安装vnStat流量监控，请先安装！${plain}\n" && return 1
     if [ -d /tmp/vnstat-2.10 ]; then
         cd /tmp/vnstat-2.10
     else
-        echo -e "\n${red}未检测到vnstat-2.10文件夹，请手动卸载VnStat！${plain}"
+        echo -e "\n${red}未检测到vnstat-2.10文件夹，请手动卸载vnStat！${plain}"
         return 1
     fi
     # 停止vnstat服务
@@ -804,17 +819,30 @@ uninstall_vnstat() {
     # 使用源码卸载
     ./configure --prefix=/usr --sysconfdir=/etc && make uninstall
     
-    [[ $? == 0 ]] && echo -e "\n${green}VnStat流量监控 卸载成功！${plain}"
+    [[ $? == 0 ]] && echo -e "\n${green}vnStat流量监控 卸载成功！${plain}"
     # 清理残留文件
     cd ${cur_dir}
     [ -d /tmp/vnstat-2.10 ] && rm -rf /tmp/vnstat-2.10
     [ -s /etc/vnstat.conf ] && rm -rf /etc/vnstat.conf
     [ -d /var/lib/vnstat ] && rm -rf /var/lib/vnstat
     [ -s /usr/lib/systemd/system/vnstat.service ] && rm -rf /usr/lib/systemd/system/vnstat.service
-    echo -e "\n${green}VnStat残留文件 清理完成！${plain}"
+    echo -e "\n${green}vnStat残留文件 清理完成！${plain}"
+    restart_agent 0
     
     if [[ $# == 0 ]]; then
         show_menu
+    fi
+}
+up_time(){
+    echo -e "> 更新同步服务器时间UTC+8"
+    # 自动备份初始时间命令
+    [ -s /etc/localtime -a -s /etc/localtime.bak ] && rm -rf /etc/localtime
+    [ -s /etc/localtime ] && \mv /etc/localtime{,.bak}
+    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && date
+    echo -e "\n${green}时间同步成功！${plain}"
+    
+    if [[ $# == 0 ]]; then
+        before_show_menu
     fi
 }
 
@@ -842,8 +870,9 @@ show_usage() {
     echo "./mmon_install.sh update_script              - 更新脚本"
     echo "--------------------------------------------------------"
     echo "青蛇探针面板 插件使用: "
-    echo "./mmon_install.sh install_vnstat             - 安装VnStat流量监控"
-    echo "./mmon_install.sh uninstall_vnstat           - 卸载VnStat流量监控"
+    echo "./mmon_install.sh install_vnstat             - 安装vnStat流量监控"
+    echo "./mmon_install.sh uninstall_vnstat           - 卸载vnStat流量监控"
+    echo "./mmon_install.sh up_time                    - 同步服务器时间UTC+8"
     echo "--------------------------------------------------------"
 }
 
@@ -868,13 +897,14 @@ show_menu() {
     ${green}14.${plain} 获取面板日志
     ${green}15.${plain} 卸载管理面板
     ————————————————-
-    ${green}16.${plain} 安装VnStat流量监控
-    ${green}17.${plain} 卸载VnStat流量监控
-    ${green}18.${plain} 更新脚本
+    ${green}16.${plain} 安装vnStat流量监控
+    ${green}17.${plain} 卸载vnStat流量监控
+    ${green}18.${plain} 同步服务器时间UTC+8
+    ${green}19.${plain} 更新脚本
     ————————————————-
     ${green}0.${plain}  退出脚本
     "
-    echo && read -ep "请输入选择 [0-18]: " num
+    echo && read -ep "请输入选择 [0-19]: " num
     
     case "${num}" in
         0)
@@ -932,10 +962,13 @@ show_menu() {
             uninstall_vnstat
         ;;
         18)
+            up_time
+        ;;
+        19)
             update_script
         ;;
         *)
-            echo -e "${red}请输入正确的数字 [0-18]${plain}"
+            echo -e "${red}请输入正确的数字 [0-19]${plain}"
         ;;
     esac
 }
@@ -986,6 +1019,9 @@ if [[ $# > 0 ]]; then
         ;;
         "uninstall_vnstat")
             uninstall_vnstat 0
+        ;;
+        "up_time")
+            up_time 0
         ;;
         "install_dashboard")
             shift
