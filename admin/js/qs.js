@@ -515,7 +515,7 @@ $(function(){
                                 <a data-toggle="modal" href="#modal-form" class="serveredit btn btn-white btn-sm"><i
                                         class="fa fa-pencil"></i> 编辑 </a>
                                 <a  href="javascript:;" class="ssh btn btn-info btn-sm hidden-xs"><i
-                                    class="fa fa-desktop"></i> Ssh </a>
+                                    class="fa fa-desktop"></i> SSH </a>
                                 <a  href="javascript:;" class="shell btn btn-info btn-sm hidden-xs"><i
                                     class="fa fa-desktop"></i> 脚本 </a>
                                 <a  href="javascript:;" class="flow btn btn-info btn-sm hidden-xs"><i
@@ -757,7 +757,7 @@ $(function(){
     $(document).on("click",".flow",function(){
         let _self = $(this);
         let _id = _self.parents("tr").find("._id").val();
-        window.location.href = "/flow/?id="+_id
+        window.open("/flow/?id="+_id)
     })
 
     $(document).on("click",".ping",function(){
