@@ -10,6 +10,7 @@ var indexRouter = require('../routes/index');
 var userRouter = require('../routes/user');
 var shareRouter = require('../routes/share');
 var tgRouter = require('../routes/tg');
+var sftpRouter = require('../routes/sftp');
 var serverListRouter = require('../routes/serverlist');
 var indexws = require('../routes/ws');
 
@@ -21,6 +22,8 @@ const publicPath = path.join(nodeRoot, "client", "public");
 const publicPathHome = path.join(nodeRoot, "home");
 const publicPathAdmin = path.join(nodeRoot, "admin");
 const publicPathflow = path.join(nodeRoot, "flow");
+const publicPathsftp = path.join(nodeRoot, "sftp");
+
 console.log(path.join(nodeRoot, "home"))
 const express = require("express");
 
@@ -91,6 +94,7 @@ app.use(cookieParser());
 app.use('/server', indexRouter);
 app.ws('/basic', indexws.basic);
 
+
 app.use(safeShutdownGuard);
 app.use(session);
 app.disable("x-powered-by");
@@ -106,6 +110,8 @@ app.post("/admin", express.static(publicPathAdmin, expressConfig));
 app.use("/admin", express.static(publicPathAdmin, expressConfig));
 app.post("/flow", express.static(publicPathflow, expressConfig));
 app.use("/flow", express.static(publicPathflow, expressConfig));
+app.post("/sftp", express.static(publicPathsftp, expressConfig));
+app.use("/sftp", express.static(publicPathsftp, expressConfig));
 app.get("/host/:host?", connect);
 app.post("/submit", (req, res) => {
 	connect(req, res, req.body.host,req.body.port, req.body.username, req.body.userpassword);
@@ -119,7 +125,6 @@ app.get("/login", (req, res) => {
 app.get("/", (req, res) => {
 	res.sendFile(path.join(path.join(publicPathHome, "index.html")));
 });
-
 
 
 //验证token是否过期并规定那些路由不需要验证
@@ -136,7 +141,15 @@ app.use(jwt({
 		'/server/interface',
 		'/server/dbiflist',
 		'/submit',
-		'/socket.io'
+		'/socket.io',
+		'/sftp',
+		'/sftp/read',
+		'/sftp/dir',
+		'/sftp/write',
+		'/sftp/touch',
+		'/sftp/mkdir',
+		'/sftp/rmdir',
+		'/sftp/rm'
 	]  //不需要验证的接口名称
   })
   )
@@ -170,6 +183,7 @@ app.use('/user', userRouter);
 app.use('/serverlist', serverListRouter);
 app.use('/share', shareRouter);
 app.use('/tg', tgRouter);
+app.use('/sftp', sftpRouter);
 
 
 

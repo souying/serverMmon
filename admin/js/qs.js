@@ -520,6 +520,8 @@ $(function(){
                                     class="fa fa-desktop"></i> 脚本 </a>
                                 <a  href="javascript:;" class="flow btn btn-info btn-sm hidden-xs"><i
                                     class="fa fa-desktop"></i> 流量 </a>
+                                <a  href="javascript:;" class="sftp btn btn-info btn-sm hidden-xs"><i
+                                    class="fa fa-desktop"></i> SFTP </a>
                                 <a href="javascript:;" class="deletebtn btn btn-danger btn-sm"><i
                                     class="fa fa fa-times"></i> 删除 </a>
                             </td>
@@ -759,7 +761,16 @@ $(function(){
         let _id = _self.parents("tr").find("._id").val();
         window.open("/flow/?id="+_id)
     })
-
+    $(document).on("click",".sftp",function(){
+        let _self = $(this);
+        let _id = _self.parents("tr").find("._id").val();
+        let url = serverItem[_id].url;
+        let username = serverItem[_id].username?serverItem[_id].username:"";
+        let password = serverItem[_id].password?serverItem[_id].password:"";
+        let ip = url.split(":")[0]
+        window.open('/sftp/?username='+username+'&ip='+ip+'&password='+password)
+    })
+    
     $(document).on("click",".ping",function(){
         toastr.success("请等待")
         let _self = $(this);

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Inspired from Sublime Text and SSH plugin, TePe is a humble attempt to create a online code editor together with a SFTP connection">
+    <meta name="keywords" content="online code editor, SFTP, sublime text, coding, autocomplete">    
+    <meta name="author" content="mustafa dikici">
+    <title>servermmon(青蛇探针) - Code-Editor-SFTP</title>
+    <!--
+    <Bootstrap>core CSS </Bootstrap>
+    -->
+    <link href="css/bootstrap-cosmo.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <!--
+    <Add>custom CSS here </Add>
+    -->
+    <link href="css/style.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  </head>
+  <body>
+
+    <div id="connectModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" class="modal hide fade">
+      <div class="modal-header" style="padding-top: 12px; padding-bottom:!2px; margin-bottom:12px;border-bottom: 1px solid #e5e5e5;">
+        <h4 style="float:left; font-size: 18px;">连接到服务器</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;">&times;</button>
+        <br style="clear:both"/>
+      </div>
+      <div class="modal-body">     
+        <form class="form-horizontal" >
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label">SFTP(IP):</label>
+              <div class="controls">
+                <input id="host" type="text">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">端口:</label>
+              <div class="controls">
+                <input id="port" type="text" value="22">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">服务器用户名:</label>
+              <div class="controls">
+                <input id="username" type="text">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">服务器密码:</label>
+              <div class="controls">
+                <input id="password" type="text">
+              </div>
+            </div>          
+            <div class="control-group">
+              <label class="control-label">文件夹(文件)路径:</label>
+              <div class="controls">
+                <input id="directory" type="text">
+              </div>
+            </div> 
+            <div class="control-group">
+              <div class="controls">
+                <button id="start-sftp" class="btn btn-danger" style="width:221px;">连接</button>
+              </div>
+            </div>                    
+          </fieldset>
+        </form>
+      </div>
+    </div>
+
+    <!-- new file modal -->
+    <div id="newFileModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal hide fade">
+      <div class="modal-body">
+        <form class="form-horizontal" >
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label">文件名(带后缀):</label>
+              <div class="controls">
+                <input id="fileName" type="text">
+              </div>
+            </div>                   
+          </fieldset>
+        </form>        
+      </div>
+      <div class="modal-footer">
+        <button id="create-file" class="btn btn-primary">确认</button>
+        <button data-dismiss="modal" aria-hidden="true" class="btn">取消</button>
+      </div>
+    </div>
+
+    <!-- new folder modal -->    
+    <div id="newFolderModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal hide fade">
+      <div class="modal-body">
+        <form class="form-horizontal" >
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label">文件夹名:</label>
+              <div class="controls">
+                <input id="folderName" type="text">
+              </div>
+            </div>                   
+          </fieldset>
+        </form> 
+      </div>
+      <div class="modal-footer">
+        <button id="create-folder" class="btn btn-primary">确认</button>
+        <button data-dismiss="modal" aria-hidden="true" class="btn">取消</button>
+      </div>
+    </div>
+
+    <div id="removeFolderModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal hide fade">
+      <div class="modal-body" style="font-size:16px; margin: 18px 0 0 18px;">
+        <div style="color: black"><i class="icon-warning-sign" style="font-size:32px;"></i> <span style="vertical-align:top">删除文件夹</span> 
+          <span style="vertical-align:top; font-weight:bold;" id="deleteFolderName"></span><span style="vertical-align:top" >?</span></div>
+      </div>
+      <div class="modal-footer">
+        <button id="delete-folder" class="btn btn-danger">确认</button>
+        <button data-dismiss="modal" aria-hidden="true" class="btn">取消</button>
+      </div>
+    </div>
+
+    <div id="removeFileModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal hide fade">
+      <div class="modal-body" style="font-size:16px; margin: 18px 0 0 18px;">
+        <div style="color: black"><i class="icon-warning-sign" style="font-size:32px;"></i> <span style="vertical-align:top">删除文件</span> 
+          <span style="vertical-align:top; font-weight:bold;" id="deleteFileName"></span><span style="vertical-align:top" >?</span></div>
+      </div>
+      <div class="modal-footer">
+        <button id="delete-file" class="btn btn-danger">确认</button>
+        <button data-dismiss="modal" aria-hidden="true" class="btn">取消</button>
+      </div>
+    </div>
+
+    <!-- editor settings menu -->
+    <div id="menu-toggle" style="display:none; bottom:0; background:#fff;" class="editor-menu">
+      <div id="menu-content" style="" class="menu">
+        <div id="optionsPanel" style="height: 100%; background:#fff;">
+          <div>
+            <table id="controls">
+              <tr>
+                <td>
+                  <label for="split">Split</label>
+                </td>
+                <td>
+                  <select id="split" size="1">
+                    <option value="none">None</option>
+                    <option value="below">Below</option>
+                    <option value="beside">Beside</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label for="theme">主题</label>
+                </td>
+                <td>
+                  <select id="theme" size="1">
+                    <optgroup label="Bright">
+                      <option value="ace/theme/chrome">Chrome</option>
+                      <option value="ace/theme/clouds">Clouds</option>
+                      <option value="ace/theme/crimson_editor">Crimson Editor</option>
+                      <option value="ace/theme/dawn">Dawn</option>
+                      <option value="ace/theme/dreamweaver">Dreamweaver</option>
+                      <option value="ace/theme/eclipse">Eclipse</option>
+                      <option value="ace/theme/github">GitHub</option>
+                      <option value="ace/theme/solarized_light">Solarized Light</option>
+                      <option value="ace/theme/textmate">TextMate</option>
+                      <option value="ace/theme/tomorrow">Tomorrow</option>
+                      <option value="ace/theme/xcode">XCode</option>
+                    </optgroup>
+                    <optgroup label="Dark">
+                      <option value="ace/theme/ambiance">Ambiance</option>
+                      <option value="ace/theme/chaos">Chaos</option>
+                      <option value="ace/theme/clouds_midnight">Clouds Midnight</option>
+                      <option value="ace/theme/cobalt">Cobalt</option>
+                      <option value="ace/theme/idle_fingers" selected="selected">idleFingers</option>
+                      <option value="ace/theme/kr_theme">krTheme</option>
+                      <option value="ace/theme/merbivore">Merbivore</option>
+                      <option value="ace/theme/merbivore_soft">Merbivore Soft</option>
+                      <option value="ace/theme/mono_industrial">Mono Industrial</option>
+                      <option value="ace/theme/monokai">Monokai</option>
+                      <option value="ace/theme/pastel_on_dark">Pastel on dark</option>
+                      <option value="ace/theme/solarized_dark">Solarized Dark</option>
+                      <option value="ace/theme/terminal">Terminal</option>
+                      <option value="ace/theme/tomorrow_night">Tomorrow Night</option>
+                      <option value="ace/theme/tomorrow_night_blue">Tomorrow Night Blue</option>
+                      <option value="ace/theme/tomorrow_night_bright">Tomorrow Night Bright</option>
+                      <option value="ace/theme/tomorrow_night_eighties">Tomorrow Night 80s</option>
+                      <option value="ace/theme/twilight">Twilight</option>
+                      <option value="ace/theme/vibrant_ink">Vibrant Ink</option>
+                    </optgroup>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label for="fontsize">字体大小</label>
+                </td>
+                <td>
+                  <select id="fontsize" size="1">
+                    <option value="10px">10px</option>
+                    <option value="11px">11px</option>
+                    <option value="12px" selected="selected">12px</option>
+                    <option value="13px">13px</option>
+                    <option value="14px">14px</option>
+                    <option value="16px">16px</option>
+                    <option value="18px">18px</option>
+                    <option value="20px">20px</option>
+                    <option value="24px">24px</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label for="folding">代码折叠</label>
+                </td>
+                <td>
+                  <select id="folding" size="1">
+                    <option value="manual">manual</option>
+                    <option value="markbegin" selected="selected">mark begin</option>
+                    <option value="markbeginend">mark begin and end</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label for="keybinding">Key绑定</label>
+                </td>
+                <td>
+                  <select id="keybinding" size="1">
+                    <option value="ace">Ace</option>
+                    <option value="vim">Vim</option>
+                    <option value="emacs">Emacs</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label for="soft_wrap">软包装</label>
+                </td>
+                <td>
+                  <select id="soft_wrap" size="1">
+                    <option value="off">Off</option>
+                    <option value="40">40 Chars</option>
+                    <option value="80">80 Chars</option>
+                    <option value="free">Free</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <table id="more-controls">
+                    <tr>
+                      <td>
+                        <label for="select_style">全线选择</label>
+                      </td>
+                      <td>
+                        <input id="select_style" type="checkbox" name="select_style" checked="checked">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="highlight_active">高亮显示活动线条</label>
+                      </td>
+                      <td>
+                        <input id="highlight_active" type="checkbox" name="highlight_active" checked="checked">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="show_hidden">显示不可见项</label>
+                      </td>
+                      <td>
+                        <input id="show_hidden" type="checkbox" name="show_hidden">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="display_indent_guides">显示缩进辅助线</label>
+                      </td>
+                      <td>
+                        <input id="display_indent_guides" type="checkbox" name="display_indent_guides">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="show_hscroll">持久性HScroll</label>
+                      </td>
+                      <td>
+                        <input id="show_hscroll" type="checkbox" name="show_hscroll">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="animate_scroll">动画滚动</label>
+                      </td>
+                      <td>
+                        <input id="animate_scroll" type="checkbox" name="animate_scroll">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="show_gutter">显示檐沟</label>
+                      </td>
+                      <td>
+                        <input id="show_gutter" type="checkbox" checked="checked">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="show_print_margin">显示打印边距</label>
+                      </td>
+                      <td>
+                        <input id="show_print_margin" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="soft_tab">使用软选项卡</label>
+                      </td>
+                      <td>
+                        <input id="soft_tab" type="checkbox" checked="checked">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="highlight_selected_word">突出显示所选单词</label>
+                      </td>
+                      <td>
+                        <input id="highlight_selected_word" type="checkbox" checked="checked">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="enable_behaviours">启用行为</label>
+                      </td>
+                      <td>
+                        <input id="enable_behaviours" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="fade_fold_widgets">淡入淡出折叠小部件</label>
+                      </td>
+                      <td>
+                        <input id="fade_fold_widgets" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="elastic_tabstops">启用弹性选项卡</label>
+                      </td>
+                      <td>
+                        <input id="elastic_tabstops" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="isearch">增量搜索</label>
+                      </td>
+                      <td>
+                        <input id="isearch" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="highlight_token">显示令牌信息</label>
+                      </td>
+                      <td>
+                        <input id="highlight_token" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label for="read_only">只读</label>
+                      </td>
+                      <td>
+                        <input id="read_only" type="checkbox">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2">
+                        <input type="button" value="编辑代码段" onclick="env.editSnippets()">
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span id="settings"><i class="icon-th"></i>设置</span>
+    <div id="wrapper">
+      <!--
+      <Sidebar> </Sidebar>
+      -->
+      <div id="sidebar-wrapper">
+        
+        <button id="connect-modal" style="font-size:14px; width:250px; border-radius: 0;text-align:left; background: #718E34;" class="btn btn-warning btn-large"> <i class="icon-unlink"> </i><span>连接到服务器</span></button>
+        <div id="folder-tree" style="display:none" class="sidebar-nav"></div>
+      </div>
+      <!--
+      <Page> content </Page>
+      -->
+      <div id="page-content-wrapper">
+        <div class="page-content">
+          <ul id="editor-tabs" class="empty"></ul>
+          <div id="editor-container" style="position:relative;"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <script type="text/javascript">
+      var require = {
+        baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname.split("/").slice(0, -1).join("/"),
+        paths: {
+          jquery: "js/vendor/jquery.min",
+          underscore: "js/vendor/underscore-min",
+          backbone: "js/vendor/backbone-min",
+          bootstrap: 'js/vendor/bootstrap',
+          context : 'js/vendor/context' ,
+          ace: "js/lib/ace"
+        },
+        shim: {
+          'underscore': {
+            exports: "_"
+          },
+          'backbone': {
+            deps: ['underscore', 'jquery'],
+            exports: 'Backbone'
+          },
+          'bootstrap' : ['jquery'],
+          'bootbox'   : ['jquery']
+        },
+        waitSeconds: 30
+      };
+    </script>
+    <script src="js/editor/require.js" data-main="js/editor/demo" type="text/javascript">   </script>
+  </body>
+</html>
