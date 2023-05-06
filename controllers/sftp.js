@@ -96,8 +96,7 @@ exports.start = function(req, res) {
         console.log(r);
         //return;
       });
-    });
-    c.on('error', function(err) {
+    }).on('error', function(err) {
       console.log('Connection :: error :: ' + err);
       res.status(500).send('Authentication failure');
     }).on('end', function() {
