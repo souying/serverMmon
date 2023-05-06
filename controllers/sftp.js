@@ -75,10 +75,6 @@ exports.start = function(req, res) {
     var port = req.body.port?req.body.port:22;
 
     c.on('ready', function() {
-      
-    });
-
-    connection.on('ready', function(){
       console.log('Connection :: ready');
       connection = c;
       //sftpConnection = c;
@@ -100,22 +96,25 @@ exports.start = function(req, res) {
         console.log(r);
         //return;
       });
-    }).on('error', function(err){
-      onsole.log('Connection :: error :: ' + err);
+    });
+    c.on('error', function(err) {
+      console.log('Connection :: error :: ' + err);
       res.status(500).send('Authentication failure');
-    }).on('keyboard-interactive', function (name, descr, lang, prompts, finish) {
-        // For illustration purposes only! It's not safe to do this!
-        // You can read it from process.stdin or whatever else...
-        return finish([password]);
-    
-        // And remember, server may trigger this event multiple times
-        // and for different purposes (not only auth)
+    }).on('end', function() {
+      console.log('Connection :: end');
+    }).on('close', function(had_error) {
+      console.log('Connection :: close');
     }).connect({
       host: host,
       port: port,
       username: username,
-        tryKeyboard: true
+      password: password,
+      hostVerifier: function(){
+        return true;
+      }
     });
+
+    
     
 
 }
