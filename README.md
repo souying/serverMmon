@@ -28,10 +28,11 @@
 * Telegram群组：https://t.me/servermmon  
 
 
-![Latest Version](https://cdn.365api.cn/mmon/home.png)
-![Latest Version ssh](https://cdn.365api.cn/mmon/ssh.png)
-![Latest Version](https://cdn.365api.cn/mmon/11.png)
-![Latest Version ssh](https://cdn.365api.cn/mmon/22.png)   
+![Latest Version](https://cdn.365api.cn/mmon/home.png)   
+![Latest Version ssh](https://cdn.365api.cn/mmon/ssh.png)   
+![Latest Version](https://cdn.365api.cn/mmon/admin.png)   
+![Latest Version ssh](https://cdn.365api.cn/mmon/vnstat.png)   
+![Latest Version ssh](https://cdn.365api.cn/mmon/sftp.png)  
 
 # 主要功能介绍：
 * 全球服务器分布世界地图  
