@@ -70,7 +70,8 @@
     "request": "^2.88.2",
     "socket.io": "^4.5.1",
     "ssh2": "^1.11.0",
-    "validator": "^13.7.0"
+    "validator": "^13.7.0",
+    "@vercel/node": "^2.14.1"
   },
   "scripts": {
     "start": "node index.js",
