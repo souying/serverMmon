@@ -75,7 +75,8 @@
   "scripts": {
     "start": "node index.js",
     "devStart": "nodemon index.js",
-    "build": "webpack --progress --config scripts/webpack.common.js --mode=production",
+    "build": "node index.js",
+    "builds": "webpack --progress --config scripts/webpack.common.js --mode=production",
     "package": "mkdir -p dist && pkg --targets node14-linux-x64,node14-win-x64 --out-path dist ."
   },
   "devDependencies": {
