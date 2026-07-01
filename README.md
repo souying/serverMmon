@@ -14,12 +14,6 @@
 
 
 
-![Latest Version](https://cdn.365api.cn/mmon/home.png)   
-![Latest Version ssh](https://cdn.365api.cn/mmon/ssh.png)   
-![Latest Version](https://cdn.365api.cn/mmon/admin.png)   
-![Latest Version ssh](https://cdn.365api.cn/mmon/vnstat.png)   
-![Latest Version ssh](https://cdn.365api.cn/mmon/sftp.png)  
-
 # 主要功能介绍：
 * 全球服务器分布世界地图  
 * 服务器（控制端）ping 连通率功能   
