@@ -1,11 +1,4 @@
-<p align="center">
-    <a href="https://github.com/souying/serverMmon/blob/main/LICENSE"><img src="https://img.shields.io/github/license/souying/serverMmon?color=green&logo=github&style=plastic" alt="license"></a>
-    <a href="https://github.com/souying/serverMmon"><img src="https://img.shields.io/github/stars/souying/serverMmon.svg?logo=github&style=plastic" alt="GitHub stars"></a>
-    <a href="https://github.com/souying/serverMmon/forks"><img src="https://img.shields.io/github/forks/souying/serverMmon.svg?logo=github&style=plastic" alt="GitHub forks"></a>
-    <a href="https://hub.docker.com/r/grbhq/mmon"><img src="https://img.shields.io/docker/pulls/grbhq/mmon?logo=docker&style=plastic" alt="Docker Pulls"></a>
-    <a href="https://hub.docker.com/r/grbhq/mmon"><img src="https://img.shields.io/docker/image-size/grbhq/mmon?logo=docker&style=plastic" alt="Docker Size"></a>
-    <a href="https://hub.docker.com/r/grbhq/mmon"><img src="https://img.shields.io/docker/stars/grbhq/mmon?logo=docker&style=plastic" alt="Docker Stars"></a>
-</p>
+
 
 <div align="center">
     <a href="https://moecount.glitch.me/get/@mmon?theme=rule34">
@@ -19,13 +12,6 @@
 
 # serverMmon(青蛇探针)：
 
-* serverMmon(青蛇探针)是nodeJs开发的一个酷炫高逼格的云探针、云监控、服务器云监控、多服务器探针~。
-* 前台在线演示：http://106.126.11.114:5999/  
-* 后台在线演示：http://106.126.11.114:5999/admin   
-* 在线SSH演示：http://106.126.11.114:5999/ssh   
-* 在线sftp编辑器：http://106.126.11.114:5999/sftp     
-* 流量统计演示：http://106.126.11.114:5999/flow/?id=Fi3gXtMAtc97bPoo         
-* Telegram群组：https://t.me/servermmon  
 
 
 ![Latest Version](https://cdn.365api.cn/mmon/home.png)   
